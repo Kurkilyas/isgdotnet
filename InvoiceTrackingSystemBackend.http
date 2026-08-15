@@ -1,0 +1,6 @@
+@InvoiceTrackingSystemBackend_HostAddress = http://localhost:5161
+
+GET {{InvoiceTrackingSystemBackend_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
