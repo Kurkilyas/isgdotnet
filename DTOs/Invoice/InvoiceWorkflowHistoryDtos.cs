@@ -1,4 +1,4 @@
-using InvoiceTrackingSystemBackend.Enums;
+using InvoiceTrackingSystemBackend.Constants;
 
 namespace InvoiceTrackingSystemBackend.DTOs.Invoice;
 

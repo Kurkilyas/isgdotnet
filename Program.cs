@@ -9,6 +9,9 @@ builder.Services.AddOpenApi();
 builder.Services.AddDbContext<InvoiceDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("InvoiceDb")));
 
+builder.Services.AddDbContext<UserDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("UserDb")));
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

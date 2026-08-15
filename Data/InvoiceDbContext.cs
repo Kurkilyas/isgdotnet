@@ -1,3 +1,4 @@
+using InvoiceTrackingSystemBackend.Constants;
 using InvoiceTrackingSystemBackend.Entities.Invoice;
 using Microsoft.EntityFrameworkCore;
 
@@ -125,7 +126,7 @@ public class InvoiceDbContext : DbContext
             entity.Property(e => e.Currency)
                   .HasConversion<string>()
                   .HasMaxLength(10)
-                  .HasDefaultValue(Enums.Currency.Try);
+                  .HasDefaultValue(Currency.Try);
             entity.Property(e => e.AssignmentMethod)
                   .HasConversion<string>()
                   .HasMaxLength(30);
@@ -204,7 +205,7 @@ public class InvoiceDbContext : DbContext
             entity.Property(e => e.StepKind)
                   .HasConversion<string>()
                   .HasMaxLength(30)
-                  .HasDefaultValue(Enums.StepKind.Fixed);
+                  .HasDefaultValue(StepKind.Fixed);
             entity.Property(e => e.MaxDurationDays).HasColumnType("decimal(5,2)");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.HasQueryFilter(e => e.DeletedAt == null);

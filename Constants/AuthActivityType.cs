@@ -1,0 +1,16 @@
+namespace InvoiceTrackingSystemBackend.Constants;
+
+public enum AuthActivityType
+{
+    LOGIN_SUCCESS,
+    LOGIN_FAILED,
+    LOGOUT,
+    PASSWORD_CHANGED,
+    PASSWORD_RESET_REQUESTED,
+    PASSWORD_RESET_COMPLETED,
+    EMAIL_VERIFIED,
+    ACCOUNT_LOCKED,
+    ACCOUNT_UNLOCKED,
+    ROLE_ASSIGNED,
+    ROLE_REVOKED
+}

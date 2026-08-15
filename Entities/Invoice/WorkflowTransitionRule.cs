@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using InvoiceTrackingSystemBackend.Entities.Common;
-using InvoiceTrackingSystemBackend.Enums;
+using InvoiceTrackingSystemBackend.Constants;
 
 namespace InvoiceTrackingSystemBackend.Entities.Invoice;
 

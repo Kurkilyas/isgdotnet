@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using InvoiceTrackingSystemBackend.Entities.Common;
-using InvoiceTrackingSystemBackend.Enums;
+using InvoiceTrackingSystemBackend.Constants;
 
 namespace InvoiceTrackingSystemBackend.Entities.Invoice;
 

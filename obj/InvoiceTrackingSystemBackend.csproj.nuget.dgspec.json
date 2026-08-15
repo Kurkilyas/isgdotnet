@@ -1,29 +1,36 @@
 {
   "format": 1,
   "restore": {
-    "/Users/ilyaskurk/Desktop/InvoiceTrackingSystem/InvoiceTrackingSystemBackend/InvoiceTrackingSystemBackend.csproj": {}
+    "C:\\Users\\admin\\Desktop\\Dotnet Projeler\\InvoiceTrackingSystem\\InvoiceTrackingSystemBackend\\InvoiceTrackingSystemBackend.csproj": {}
   },
   "projects": {
-    "/Users/ilyaskurk/Desktop/InvoiceTrackingSystem/InvoiceTrackingSystemBackend/InvoiceTrackingSystemBackend.csproj": {
+    "C:\\Users\\admin\\Desktop\\Dotnet Projeler\\InvoiceTrackingSystem\\InvoiceTrackingSystemBackend\\InvoiceTrackingSystemBackend.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/ilyaskurk/Desktop/InvoiceTrackingSystem/InvoiceTrackingSystemBackend/InvoiceTrackingSystemBackend.csproj",
+        "projectUniqueName": "C:\\Users\\admin\\Desktop\\Dotnet Projeler\\InvoiceTrackingSystem\\InvoiceTrackingSystemBackend\\InvoiceTrackingSystemBackend.csproj",
         "projectName": "InvoiceTrackingSystemBackend",
-        "projectPath": "/Users/ilyaskurk/Desktop/InvoiceTrackingSystem/InvoiceTrackingSystemBackend/InvoiceTrackingSystemBackend.csproj",
-        "packagesPath": "/var/folders/qk/j31sy5wn2y73ycxdhrw363040000gn/T/cursor-sandbox-cache/bcda9ab17318c12a36ab1be2ed13bb24/nuget",
-        "outputPath": "/Users/ilyaskurk/Desktop/InvoiceTrackingSystem/InvoiceTrackingSystemBackend/obj/",
+        "projectPath": "C:\\Users\\admin\\Desktop\\Dotnet Projeler\\InvoiceTrackingSystem\\InvoiceTrackingSystemBackend\\InvoiceTrackingSystemBackend.csproj",
+        "packagesPath": "C:\\Users\\admin\\AppData\\Local\\Temp\\cursor-sandbox-cache\\4f488d370eda36219b084cfc8a932f1a\\nuget",
+        "outputPath": "C:\\Users\\admin\\Desktop\\Dotnet Projeler\\InvoiceTrackingSystem\\InvoiceTrackingSystemBackend\\obj\\",
         "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
         "configFilePaths": [
-          "/Users/ilyaskurk/.nuget/NuGet/NuGet.Config"
+          "C:\\Users\\admin\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
           "net9.0"
         ],
         "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net9.0": {
+            "framework": "net9.0",
             "targetAlias": "net9.0",
             "projectReferences": {}
           }
@@ -38,10 +45,11 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.300"
+        "SdkAnalysisLevel": "10.0.400"
       },
       "frameworks": {
         "net9.0": {
+          "framework": "net9.0",
           "targetAlias": "net9.0",
           "dependencies": {
             "Microsoft.AspNetCore.OpenApi": {
@@ -76,6 +84,24 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[9.0.19, 9.0.19]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Host.win-x64",
+              "version": "[9.0.19, 9.0.19]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[9.0.19, 9.0.19]"
+            },
+            {
+              "name": "Microsoft.WindowsDesktop.App.Ref",
+              "version": "[9.0.19, 9.0.19]"
+            }
+          ],
           "frameworkReferences": {
             "Microsoft.AspNetCore.App": {
               "privateAssets": "none"
@@ -84,7 +110,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/9.0.300/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.400/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
