@@ -10,7 +10,7 @@
         "projectUniqueName": "C:\\Users\\admin\\Desktop\\Dotnet Projeler\\InvoiceTrackingSystem\\InvoiceTrackingSystemBackend\\InvoiceTrackingSystemBackend.csproj",
         "projectName": "InvoiceTrackingSystemBackend",
         "projectPath": "C:\\Users\\admin\\Desktop\\Dotnet Projeler\\InvoiceTrackingSystem\\InvoiceTrackingSystemBackend\\InvoiceTrackingSystemBackend.csproj",
-        "packagesPath": "C:\\Users\\admin\\AppData\\Local\\Temp\\cursor-sandbox-cache\\4f488d370eda36219b084cfc8a932f1a\\nuget",
+        "packagesPath": "C:\\Users\\admin\\.nuget\\packages\\",
         "outputPath": "C:\\Users\\admin\\Desktop\\Dotnet Projeler\\InvoiceTrackingSystem\\InvoiceTrackingSystemBackend\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
@@ -52,9 +52,13 @@
           "framework": "net9.0",
           "targetAlias": "net9.0",
           "dependencies": {
-            "Microsoft.AspNetCore.OpenApi": {
+            "BCrypt.Net-Next": {
               "target": "Package",
-              "version": "[9.0.5, )"
+              "version": "[4.2.0, )"
+            },
+            "Microsoft.AspNetCore.Authentication.JwtBearer": {
+              "target": "Package",
+              "version": "[9.0.12, )"
             },
             "Microsoft.EntityFrameworkCore.Design": {
               "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
@@ -71,6 +75,10 @@
               "suppressParent": "All",
               "target": "Package",
               "version": "[9.0.12, )"
+            },
+            "Swashbuckle.AspNetCore": {
+              "target": "Package",
+              "version": "[8.1.4, )"
             }
           },
           "imports": [

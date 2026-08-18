@@ -170,7 +170,6 @@ C:\Users\admin\Desktop\Dotnet Projeler\InvoiceTrackingSystem\InvoiceTrackingSyst
 C:\Users\admin\Desktop\Dotnet Projeler\InvoiceTrackingSystem\InvoiceTrackingSystemBackend\bin\Debug\net9.0\Azure.Core.dll
 C:\Users\admin\Desktop\Dotnet Projeler\InvoiceTrackingSystem\InvoiceTrackingSystemBackend\bin\Debug\net9.0\Azure.Identity.dll
 C:\Users\admin\Desktop\Dotnet Projeler\InvoiceTrackingSystem\InvoiceTrackingSystemBackend\bin\Debug\net9.0\Humanizer.dll
-C:\Users\admin\Desktop\Dotnet Projeler\InvoiceTrackingSystem\InvoiceTrackingSystemBackend\bin\Debug\net9.0\Microsoft.AspNetCore.OpenApi.dll
 C:\Users\admin\Desktop\Dotnet Projeler\InvoiceTrackingSystem\InvoiceTrackingSystemBackend\bin\Debug\net9.0\Microsoft.Bcl.AsyncInterfaces.dll
 C:\Users\admin\Desktop\Dotnet Projeler\InvoiceTrackingSystem\InvoiceTrackingSystemBackend\bin\Debug\net9.0\Microsoft.Build.Locator.dll
 C:\Users\admin\Desktop\Dotnet Projeler\InvoiceTrackingSystem\InvoiceTrackingSystemBackend\bin\Debug\net9.0\Microsoft.CodeAnalysis.dll
@@ -323,3 +322,24 @@ C:\Users\admin\Desktop\Dotnet Projeler\InvoiceTrackingSystem\InvoiceTrackingSyst
 C:\Users\admin\Desktop\Dotnet Projeler\InvoiceTrackingSystem\InvoiceTrackingSystemBackend\obj\Debug\net9.0\InvoiceTrackingSystemBackend.pdb
 C:\Users\admin\Desktop\Dotnet Projeler\InvoiceTrackingSystem\InvoiceTrackingSystemBackend\obj\Debug\net9.0\InvoiceTrackingSystemBackend.genruntimeconfig.cache
 C:\Users\admin\Desktop\Dotnet Projeler\InvoiceTrackingSystem\InvoiceTrackingSystemBackend\obj\Debug\net9.0\ref\InvoiceTrackingSystemBackend.dll
+C:\Users\admin\Desktop\Dotnet Projeler\InvoiceTrackingSystem\InvoiceTrackingSystemBackend\bin\Debug\net9.0\Swashbuckle.AspNetCore.Swagger.dll
+C:\Users\admin\Desktop\Dotnet Projeler\InvoiceTrackingSystem\InvoiceTrackingSystemBackend\bin\Debug\net9.0\Swashbuckle.AspNetCore.SwaggerGen.dll
+C:\Users\admin\Desktop\Dotnet Projeler\InvoiceTrackingSystem\InvoiceTrackingSystemBackend\bin\Debug\net9.0\Swashbuckle.AspNetCore.SwaggerUI.dll
+C:\Users\admin\Desktop\Dotnet Projeler\InvoiceTrackingSystem\InvoiceTrackingSystemBackend\bin\Debug\net9.0\BCrypt-Net-Next.dll
+C:\Users\admin\Desktop\Dotnet Projeler\InvoiceTrackingSystem\InvoiceTrackingSystemBackend\bin\Debug\net9.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+C:\Users\admin\AppData\Local\Temp\its-build-check\appsettings.Development.json
+C:\Users\admin\AppData\Local\Temp\its-build-check\appsettings.json
+C:\Users\admin\AppData\Local\Temp\its-build-check\InvoiceTrackingSystemBackend.staticwebassets.endpoints.json
+C:\Users\admin\AppData\Local\Temp\its-build-check\InvoiceTrackingSystemBackend.exe
+C:\Users\admin\AppData\Local\Temp\its-build-check\InvoiceTrackingSystemBackend.deps.json
+C:\Users\admin\AppData\Local\Temp\its-build-check\InvoiceTrackingSystemBackend.runtimeconfig.json
+C:\Users\admin\AppData\Local\Temp\its-build-check\InvoiceTrackingSystemBackend.dll
+C:\Users\admin\AppData\Local\Temp\its-build-check\InvoiceTrackingSystemBackend.pdb
+C:\Users\admin\AppData\Local\Temp\its-build-check3\appsettings.Development.json
+C:\Users\admin\AppData\Local\Temp\its-build-check3\appsettings.json
+C:\Users\admin\AppData\Local\Temp\its-build-check3\InvoiceTrackingSystemBackend.staticwebassets.endpoints.json
+C:\Users\admin\AppData\Local\Temp\its-build-check3\InvoiceTrackingSystemBackend.exe
+C:\Users\admin\AppData\Local\Temp\its-build-check3\InvoiceTrackingSystemBackend.deps.json
+C:\Users\admin\AppData\Local\Temp\its-build-check3\InvoiceTrackingSystemBackend.runtimeconfig.json
+C:\Users\admin\AppData\Local\Temp\its-build-check3\InvoiceTrackingSystemBackend.dll
+C:\Users\admin\AppData\Local\Temp\its-build-check3\InvoiceTrackingSystemBackend.pdb

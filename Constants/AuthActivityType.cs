@@ -2,6 +2,7 @@ namespace InvoiceTrackingSystemBackend.Constants;
 
 public enum AuthActivityType
 {
+    REGISTERED,
     LOGIN_SUCCESS,
     LOGIN_FAILED,
     LOGOUT,
