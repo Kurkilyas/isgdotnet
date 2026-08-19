@@ -1,0 +1,33 @@
+## .NET
+bin/
+obj/
+[Bb]uild/
+[Ll]og/
+[Ll]ogs/
+
+## Visual Studio / VS Code / Cursor
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.rsuser
+*.userprefs
+
+## Build / publish leftovers
+*.dll
+*.exe
+*.pdb
+*.cache
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+## Secrets (yerelde kalabilir; gerekirse user-secrets kullanın)
+# appsettings.Development.json

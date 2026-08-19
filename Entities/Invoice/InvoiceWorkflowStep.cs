@@ -7,7 +7,6 @@ namespace InvoiceTrackingSystemBackend.Entities.Invoice;
 /// Append-only log, silinmez.
 /// EŞZAMANLILIK: adım tamamlanırken UPDATE ... WHERE id=@id AND completed_at IS NULL kullanılmalı;
 /// 0 satır etkilenirse adım başkası tarafından zaten işlenmiştir (RowVersion gerekmez, completed_at bu görevi görür).
-/// step_definition_id ve department_step_id alanlarından TAM OLARAK BİRİ dolu olmalıdır (CHECK constraint).
 /// </summary>
 public class InvoiceWorkflowStep
 {
@@ -16,13 +15,9 @@ public class InvoiceWorkflowStep
     public int InvoiceId { get; set; }
     public Invoice Invoice { get; set; } = null!;
 
-    /// <summary>Sabit adımlarda dolu, departman adımında NULL.</summary>
-    public int? StepDefinitionId { get; set; }
-    public WorkflowStepDefinition? StepDefinition { get; set; }
-
-    /// <summary>Departman zinciri adımlarında dolu, sabit adımda NULL.</summary>
-    public int? DepartmentStepId { get; set; }
-    public InvoiceTypeDepartmentStep? DepartmentStep { get; set; }
+    /// <summary>Bu fatura türünün sabit sıralı akışındaki hangi adımın örneği olduğu.</summary>
+    public int InvoiceTypeStepId { get; set; }
+    public InvoiceTypeStep InvoiceTypeStep { get; set; } = null!;
 
     /// <summary>SoftFK -> Auth DB users.Id, cross-database, EF Core navigation yok.</summary>
     public int? AssignedUserId { get; set; }

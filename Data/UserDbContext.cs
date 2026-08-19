@@ -60,6 +60,7 @@ public class UserDbContext : DbContext
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.IsVerified).HasDefaultValue(false);
             entity.Property(e => e.FailedLoginCount).HasDefaultValue(0);
+            entity.Property(e => e.IsOutOfOffice).HasDefaultValue(false);
 
             entity.HasOne(e => e.Department)
                   .WithMany(d => d.Users)

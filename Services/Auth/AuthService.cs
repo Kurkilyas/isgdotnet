@@ -67,9 +67,7 @@ public class AuthService : IAuthService
             user = existing;
             user.FullName = request.FullName.Trim();
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
-            user.Phone = request.Phone;
-            user.Position = request.Position;
-            user.DepartmentId = request.DepartmentId;
+          
             user.UpdatedAt = DateTime.UtcNow;
             user.PasswordChangedAt = DateTime.UtcNow;
         }
@@ -80,9 +78,7 @@ public class AuthService : IAuthService
                 FullName = request.FullName.Trim(),
                 Email = email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-                Phone = request.Phone,
-                Position = request.Position,
-                DepartmentId = request.DepartmentId,
+           
                 IsActive = true,
                 IsVerified = false,
                 CreatedAt = DateTime.UtcNow,

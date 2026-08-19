@@ -1,10 +1,14 @@
 using InvoiceTrackingSystemBackend.Interfaces.Vega;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace InvoiceTrackingSystemBackend.Controllers.Vega;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
+[EnableRateLimiting("GlobalLimit")]
 public class TblCariController : ControllerBase
 {
     private readonly ITblCariService _service;

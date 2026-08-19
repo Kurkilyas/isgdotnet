@@ -6,11 +6,9 @@ public class InvoiceWorkflowStepResponseDto
 {
     public int Id { get; set; }
     public int InvoiceId { get; set; }
-    public int? StepDefinitionId { get; set; }
-    public string? StepDefinitionCode { get; set; }
-    public string? StepDefinitionName { get; set; }
-    public int? DepartmentStepId { get; set; }
-    public int? DepartmentStepOrder { get; set; }
+    public int InvoiceTypeStepId { get; set; }
+    public int StepOrder { get; set; }
+    public string StepName { get; set; } = null!;
     public int? AssignedUserId { get; set; }
     public int? AssignedDepartmentId { get; set; }
     public DateTime StartedAt { get; set; }

@@ -18,11 +18,5 @@ public class RegisterRequestDto
     [MaxLength(100)]
     public string Password { get; set; } = null!;
 
-    [MaxLength(20)]
-    public string? Phone { get; set; }
 
-    [MaxLength(100)]
-    public string? Position { get; set; }
-
-    public int? DepartmentId { get; set; }
 }

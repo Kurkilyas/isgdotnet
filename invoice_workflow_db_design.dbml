@@ -60,6 +60,8 @@ Table users {
   last_login_at datetime [note: 'Son başarılı giriş zamanı (güvenlik + pasif kullanıcı raporu)']
   password_changed_at datetime [note: 'Şifrenin en son değiştirildiği zaman (şifre yaşı politikası için)']
   position varchar(100) [note: 'Unvan/pozisyon']
+  is_out_of_office bool [not null, default: false, note: 'Kullanıcı şu an izinli/müsait değil mi - kendisi veya yöneticisi işaretler. Workflow atama motoru bu bayrağa bakarak invoice_type_step_approvers zincirinde bir sonraki öncelikli kişiye otomatik geçer']
+  out_of_office_until datetime [note: 'İzin/müsaitsizlik bitiş tahmini (bilgi amaçlı, otomatik kapatma için kullanılabilir)']
   created_at datetime [note: 'Kayıt oluşturulma zamanı']
   updated_at datetime [note: 'Son güncellenme zamanı']
   deleted_at datetime [note: 'SOFT DELETE']
@@ -204,23 +206,41 @@ Table invoice_types {
   Note: "INVOICE DB - master data. Örn: MALZEME_FATURASI, HIZMET_FATURASI, DENETIM_BELGELENDIRME, EGITIM, NAKLIYE"
 }
 
-Table invoice_type_department_steps {
+Table invoice_type_steps {
   id int [pk, increment, note: 'Kaydın benzersiz kimliği']
   invoice_type_id int [not null, note: 'FK -> invoice_types.id, bu adım hangi fatura türüne ait']
-  step_order int [not null, note: '1, 2, 3... zincirdeki sırası']
-  department_id int [note: 'SoftFK -> Auth DB departments.id']
-  default_user_id int [note: 'SoftFK -> Auth DB users.id - opsiyonel, departman içinde bu adımın SABİT sorumlusu belliyse (ör. Satınalma\'da hep Ahmet). Boşsa departmandaki herhangi biri/yönetici atar.']
-  default_user_display_name varchar(150) [note: 'CACHE/SNAPSHOT amaçlı - Auth DB\'deki gerçek isim değişirse burası eskiyebilir (stale). Sadece hızlı görüntüleme için, yetkilendirme/iş mantığında KULLANILMAZ, gerçek isim her zaman Auth DB users tablosundan doğrulanmalı.']
-  max_duration_days decimal(5,2) [note: 'bu departman adımının SLA süresi (iş günü)']
-  is_active bool [not null, default: true, note: 'Bu zincir adımı hâlâ kullanımda mı']
+  step_order int [not null, note: 'GERÇEK, boşluksuz sıra (1,2,3,4,5,6...) - bu fatura türü için akışın TEK kaynağı. Backend ORDER BY step_order ile bu tabloyu baştan sona okuyup ilerler, kodda sabit/hardcoded bir liste YOKTUR']
+  step_name varchar(150) [not null, note: 'Ekranda gösterilecek adım adı, ör. "Muhasebe Kontrol", "Gökhan Zerin Kontrolü", "Murat Bolat Denetim"']
+  step_role_tag varchar(30) [note: 'Opsiyonel sistemsel etiket: ERP_CONTROL / ACCOUNTING / ARCHIVE / AUDITOR / CONTROL / DEPARTMENT - otomasyon/raporlama hook\'ları için (backend özel davranış gerektiren adımları bu etiketle tanır), zorunlu değil']
+  department_id int [note: 'SoftFK -> Auth DB departments.id, opsiyonel - adım kişiye özel değil, departman havuzuna açılacaksa dolu (bu durumda invoice_type_step_approvers boş kalır)']
+  max_duration_days decimal(5,2) [note: 'bu adımın SLA süresi (iş günü)']
+  is_active bool [not null, default: true, note: 'Bu adım hâlâ kullanımda mı']
   created_at datetime [note: 'Kayıt oluşturulma zamanı']
   updated_at datetime [note: 'Son güncellenme zamanı']
   deleted_at datetime [note: 'SOFT DELETE']
 
-  Note: "INVOICE DB - master data. Örn: MALZEME_FATURASI -> [1:Satınalma, 2:Depo]. Fatura türüne göre SABİT ve önceden bellidir."
+  Note: "INVOICE DB - master data. Bir fatura türünün TÜM akışı (ERP kontrol, departman kontrolleri, denetçiler, muhasebe, arşiv dahil) burada tek ve düz bir sıralı liste olarak tanımlanır. step_role_tag opsiyoneldir, sadece backend'in özel davranış tetiklemesi gereken adımlar için kullanılır. Kişiye özel adımlarda sorumlu(lar) invoice_type_step_approvers tablosundan gelir (default_user_id burada TUTULMAZ - çifte kaynak olmasın diye). Örn (Kalite Güvence): 1:Muhasebe, 2:Buse Özdemir, 3:Gökhan Zerin, 4:Muhasebe, 5:Murat Bolat(denetçi), 6:Ali Bey."
 
   indexes {
     (invoice_type_id, step_order) [unique, name: 'uq_invoice_type_step_order']
+  }
+}
+
+Table invoice_type_step_approvers {
+  id int [pk, increment, note: 'Kaydın benzersiz kimliği']
+  invoice_type_step_id int [not null, note: 'FK -> invoice_type_steps.id, bu öncelik zinciri hangi adıma ait']
+  user_id int [not null, note: 'SoftFK -> Auth DB users.id, onaylayabilecek aday']
+  priority int [not null, note: '1 = asıl/ilk bakan, 2 = 1 numara müsait değilse (users.is_out_of_office=true) devreye giren, 3 = sıradaki... Atama motoru bu sırayla ilk MÜSAİT adaya düşer']
+  is_active bool [not null, default: true, note: 'Bu aday hâlâ zincirde mi']
+  created_at datetime [note: 'Kayıt oluşturulma zamanı']
+  updated_at datetime [note: 'Son güncellenme zamanı']
+  deleted_at datetime [note: 'SOFT DELETE']
+
+  Note: "INVOICE DB - master data. Kişiye özel adımlarda (department_id NULL) bu tablo onaylayabilecek aday(lar)ı öncelik sırasıyla listeler. Atama anında sistem priority ASC sırayla users.is_out_of_office=false olan İLK adayı assigned_user_id yapar. Zincirdeki HERKES aynı anda müsait değilse, invoice_workflow_steps.assigned_user_id NULL bırakılıp adımın assigned_department_id'si üzerinden o departmanın yöneticisine (Auth DB'de departman bazlı yönetici rolü) düşer ve AdminWrite izinli kullanıcılara bildirim gider."
+
+  indexes {
+    (invoice_type_step_id, priority) [unique, name: 'uq_step_approver_priority']
+    (invoice_type_step_id, user_id) [unique, name: 'uq_step_approver_user']
   }
 }
 
@@ -300,7 +320,7 @@ Table invoices {
   assignment_method varchar(30) [note: 'SUPPLIER_SINGLE_CANDIDATE / ML_PREDICTION / MANUAL']
 
   // Süreçteki güncel konum
-  // current_department_step_id / current_step_code BİLEREK burada YOK -
+  // current_invoice_type_step_id BİLEREK burada YOK -
   // çifte kaynak (dual source of truth) riski yaratmamak için "şu an neredeyiz"
   // bilgisi HER ZAMAN invoice_workflow_steps'ten CANLI SORGUYLA türetilir:
   //   SELECT TOP 1 * FROM invoice_workflow_steps
@@ -312,7 +332,7 @@ Table invoices {
   auditor1_user_id int [note: 'SoftFK -> Auth DB users.id']
   auditor2_user_id int [note: 'SoftFK -> Auth DB users.id']
 
-  current_status varchar(40) [not null, note: 'enum InvoiceStatus - faturanın o anki genel durumu (dashboard/filtreleme için). Adım bazında DETAY için invoice_workflow_steps sorgulanır, current_step_code gibi ayrıca senkronize edilmesi gereken bir kopya burada TUTULMAZ']
+  current_status varchar(40) [not null, note: 'enum InvoiceStatus - faturanın o anki genel durumu (dashboard/filtreleme için). Adım bazında DETAY için invoice_workflow_steps sorgulanır, current_invoice_type_step_id gibi ayrıca senkronize edilmesi gereken bir kopya burada TUTULMAZ']
 
   created_at datetime [note: 'Kayıt oluşturulma zamanı']
   updated_at datetime [note: 'Son güncellenme zamanı']
@@ -362,41 +382,23 @@ Table invoice_relations {
   }
 }
 
-// ---------------- Sabit Süreç Adımları (ERP, Denetçi, Muhasebe, Arşiv) ----------------
-
-Table workflow_step_definitions {
-  id int [pk, increment, note: 'Kaydın benzersiz kimliği']
-  code varchar(30) [not null, unique, note: 'Adımın sistemsel/teknik kodu - backend bu koda göre davranış belirler']
-  name varchar(150) [not null, note: 'Adımın okunabilir adı']
-  order_no int [not null, note: 'GERÇEK, BOŞLUKSUZ akış sırası (1,2,3,4,5,6...) - backend ORDER BY order_no ile bu tabloyu baştan sona okuyup ilerler, kodda sabit/hardcoded bir liste YOKTUR']
-  step_kind varchar(30) [not null, default: 'FIXED', note: 'FIXED = normal sabit adım (SLA/rol bilgisiyle instance açılır) / DEPARTMENT_CHAIN_PLACEHOLDER = departman zincirinin devreye gireceği YER TUTUCU satır, kendisi instance açmaz']
-  responsible_role_type varchar(30) [note: 'ERP_CONTROL / AUDITOR1 / AUDITOR2 / ACCOUNTING / ARCHIVE / SYSTEM (step_kind=DEPARTMENT_CHAIN_PLACEHOLDER ise boş kalır)']
-  max_duration_days decimal(5,2) [note: 'Bu adımın SLA süresi (iş günü) (step_kind=DEPARTMENT_CHAIN_PLACEHOLDER ise boş kalır, süre kendi invoice_type_department_steps satırından gelir)']
-  is_active bool [not null, default: true, note: 'Adım hâlâ kullanımda mı']
-  created_at datetime [note: 'Kayıt oluşturulma zamanı']
-  updated_at datetime [note: 'Son güncellenme zamanı']
-  deleted_at datetime [note: 'SOFT DELETE']
-
-  Note: "INVOICE DB - master data. TÜM fatura türleri için ortak/sabit adımlar + departman zincirinin nereye oturacağını gösteren yer tutucu. order_no ÜZERİNDEN gerçek ve TEK akış sırası burada tanımlanır, kodda ayrı bir sabit liste yoktur."
-}
-
 // ---------------- Ters / İstisna Durum Kuralları (Red, Eksik Evrak vb. Geri Dönüşler) ----------------
 
 Table workflow_transition_rules {
   id int [pk, increment, note: 'Kaydın benzersiz kimliği']
   trigger_action varchar(40) [not null, note: 'Bu kuralı tetikleyen olay: MISSING_DOCUMENT_FLAGGED / AUDITOR1_REJECTED / AUDITOR2_REJECTED vb. (enum WorkflowActionType ile aynı değer kümesi)']
-  source_step_code varchar(30) [note: 'Bu kural HANGİ adımda tetiklenirse geçerli (workflow_step_definitions.code). NULL ise kaynak adımdan bağımsız, her yerde geçerli genel kural']
-  target_step_code varchar(30) [not null, note: 'Tetiklenince GİDİLECEK adımın kodu (workflow_step_definitions.code) - ör. AUDITOR1_REJECTED -> ACCOUNTING']
+  source_step_id int [note: 'FK -> invoice_type_steps.id, bu kural HANGİ adımda tetiklenirse geçerli. NULL ise bu fatura türü içinde her adımdan tetiklenebilir']
+  target_step_id int [not null, note: 'FK -> invoice_type_steps.id, tetiklenince GİDİLECEK adım - ör. AUDITOR_REJECTED -> Muhasebe adımı']
   priority int [not null, default: 100, note: 'Birden fazla kural eşleşirse hangisi önce uygulanır (küçük sayı = önce)']
   is_active bool [not null, default: true, note: 'Kural hâlâ geçerli mi']
   created_at datetime [note: 'Kayıt oluşturulma zamanı']
   updated_at datetime [note: 'Son güncellenme zamanı']
   deleted_at datetime [note: 'SOFT DELETE']
 
-  Note: "INVOICE DB - master data. 'Hangi tetikleyicide hangi adıma dönülür' kuralını KOD DEĞİŞTİRMEDEN yönetilebilir hale getirir. Ör: (trigger=MISSING_DOCUMENT_FLAGGED, source=NULL, target=ACCOUNTING), (trigger=AUDITOR1_REJECTED, source=AUDITOR1, target=ACCOUNTING)"
+  Note: "INVOICE DB - master data. 'Hangi tetikleyicide hangi adıma dönülür' kuralını KOD DEĞİŞTİRMEDEN yönetilebilir hale getirir. Kural artık invoice_type_steps'e doğrudan referans verdiği için otomatik olarak tek bir fatura türü kapsamında kalır (source/target aynı invoice_type_id'ye ait olmalı - uygulama seviyesinde doğrulanır). Ör: (trigger=MISSING_DOCUMENT_FLAGGED, source=NULL, target=Muhasebe adımı), (trigger=AUDITOR_REJECTED, source=Denetçi adımı, target=Muhasebe adımı)"
 
   indexes {
-    (trigger_action, source_step_code) [name: 'ix_transition_rule_lookup']
+    (trigger_action, source_step_id) [name: 'ix_transition_rule_lookup']
   }
 }
 
@@ -406,8 +408,7 @@ Table invoice_workflow_steps {
   id int [pk, increment, note: 'Kaydın benzersiz kimliği']
   invoice_id int [not null, note: 'FK -> invoices.id, hangi faturaya ait']
 
-  step_definition_id int [note: 'FK -> workflow_step_definitions.id (sabit adımlarda dolu, departman adımında NULL)']
-  department_step_id int [note: 'FK -> invoice_type_department_steps.id (departman zinciri adımlarında dolu, sabit adımda NULL). İkisi TEK bir polymorphic sütuna birleştirilmiyor - böylece her ikisi de gerçek FK olarak kalıyor, referans bütünlüğü DB seviyesinde garanti ediliyor. Tek istisna: CHECK constraint ile "ikisi aynı anda dolu/boş olamaz" kuralı (exactly one of the two) uygulanmalı']
+  invoice_type_step_id int [not null, note: 'FK -> invoice_type_steps.id, bu fatura türünün sabit sıralı akışındaki hangi adımın örneği olduğu']
 
   assigned_user_id int [note: 'SoftFK -> Auth DB users.id']
   assigned_department_id int [note: 'SoftFK -> Auth DB departments.id (denormalize, hızlı filtre için)']
@@ -519,7 +520,8 @@ Ref: refresh_tokens.replaced_by_token_id > refresh_tokens.id [delete: set null]
 Ref: auth_activity_logs.user_id > users.id [delete: set null]
 
 // INVOICE DB içi gerçek FK'lar
-Ref: invoice_type_department_steps.invoice_type_id > invoice_types.id [delete: cascade]
+Ref: invoice_type_steps.invoice_type_id > invoice_types.id [delete: cascade]
+Ref: invoice_type_step_approvers.invoice_type_step_id > invoice_type_steps.id [delete: cascade]
 Ref: suppliers.supplier_category_id > supplier_categories.id [delete: set null]
 Ref: supplier_invoice_types.supplier_id > suppliers.id [delete: cascade]
 Ref: supplier_invoice_types.invoice_type_id > invoice_types.id [delete: cascade]
@@ -532,11 +534,10 @@ Ref: invoice_relations.invoice_id > invoices.id [delete: cascade]
 Ref: invoice_relations.related_invoice_id > invoices.id [delete: cascade]
 
 Ref: invoice_workflow_steps.invoice_id > invoices.id [delete: cascade]
-Ref: invoice_workflow_steps.step_definition_id > workflow_step_definitions.id [delete: set null]
-Ref: invoice_workflow_steps.department_step_id > invoice_type_department_steps.id [delete: set null]
+Ref: invoice_workflow_steps.invoice_type_step_id > invoice_type_steps.id [delete: restrict]
 
-Ref: workflow_transition_rules.source_step_code > workflow_step_definitions.code [delete: set null]
-Ref: workflow_transition_rules.target_step_code > workflow_step_definitions.code [delete: restrict]
+Ref: workflow_transition_rules.source_step_id > invoice_type_steps.id [delete: set null]
+Ref: workflow_transition_rules.target_step_id > invoice_type_steps.id [delete: restrict]
 
 Ref: invoice_workflow_history.invoice_id > invoices.id [delete: cascade]
 
@@ -550,8 +551,8 @@ Ref: invoice_notification_logs.workflow_step_id > invoice_workflow_steps.id [del
 
 // NOT: Aşağıdaki ilişkiler CROSS-DATABASE olduğu için gerçek FK DEĞİL,
 // sadece görsel/kavramsal amaçlı "SoftFK" olarak bilgi notu bırakılmıştır.
-// Ref: invoice_type_department_steps.department_id > departments.id
-// Ref: invoice_type_department_steps.default_user_id > users.id
+// Ref: invoice_type_steps.department_id > departments.id
+// Ref: invoice_type_step_approvers.user_id > users.id
 // Ref: invoices.assigned_user_id > users.id
 // Ref: invoices.auditor1_user_id > users.id
 // Ref: invoices.auditor2_user_id > users.id

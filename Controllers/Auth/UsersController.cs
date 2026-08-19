@@ -1,10 +1,14 @@
 using InvoiceTrackingSystemBackend.Interfaces.Auth;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace InvoiceTrackingSystemBackend.Controllers.Auth;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
+[EnableRateLimiting("GlobalLimit")]
 public class UsersController : ControllerBase
 {
     private readonly IAuthService _authService;

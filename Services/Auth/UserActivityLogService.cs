@@ -40,6 +40,7 @@ public class UserActivityLogService : IUserActivityLogService
         int page = 1,
         int pageSize = 20,
         int? userId = null,
+        string? description = null,
         AuthActivityType? activityType = null)
     {
         if (page < 1) page = 1;
@@ -55,6 +56,10 @@ public class UserActivityLogService : IUserActivityLogService
         if (activityType.HasValue)
         {
             query = query.Where(e => e.ActivityType == activityType.Value);
+        }
+        if(!string.IsNullOrWhiteSpace(description))
+        {
+            query = query.Where(e => e.Description != null && e.Description.Contains(description));
         }
 
         var totalCount = await query.CountAsync();

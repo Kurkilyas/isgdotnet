@@ -1,11 +1,15 @@
 using InvoiceTrackingSystemBackend.DTOs.Auth;
 using InvoiceTrackingSystemBackend.Interfaces.Auth;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace InvoiceTrackingSystemBackend.Controllers.Auth;
 
 [ApiController]
 [Route("api/[controller]")]
+[AllowAnonymous]
+[EnableRateLimiting("AuthLimit")]
 public class AuthController : ControllerBase
 {
     public const string RefreshCookieName = "refresh_token";

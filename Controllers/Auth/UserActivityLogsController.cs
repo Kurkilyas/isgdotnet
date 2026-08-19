@@ -1,11 +1,15 @@
 using InvoiceTrackingSystemBackend.Constants;
 using InvoiceTrackingSystemBackend.Interfaces.Auth;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace InvoiceTrackingSystemBackend.Controllers.Auth;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
+[EnableRateLimiting("GlobalLimit")]
 public class UserActivityLogsController : ControllerBase
 {
     private readonly IUserActivityLogService _service;
@@ -22,7 +26,7 @@ public class UserActivityLogsController : ControllerBase
         [FromQuery] int? userId = null,
         [FromQuery] AuthActivityType? activityType = null)
     {
-        var result = await _service.GetListAsync(page, pageSize, userId, activityType);
+        var result = await _service.GetListAsync(page, pageSize, userId, activityType: activityType);
         return Ok(result);
     }
 

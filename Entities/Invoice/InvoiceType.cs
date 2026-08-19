@@ -20,7 +20,7 @@ public class InvoiceType : IAuditableEntity, ISoftDeletable
     public DateTime? UpdatedAt { get; set; }
     public DateTime? DeletedAt { get; set; }
 
-    public ICollection<InvoiceTypeDepartmentStep> DepartmentSteps { get; set; } = new List<InvoiceTypeDepartmentStep>();
+    public ICollection<InvoiceTypeStep> Steps { get; set; } = new List<InvoiceTypeStep>();
     public ICollection<SupplierInvoiceType> SupplierInvoiceTypes { get; set; } = new List<SupplierInvoiceType>();
     public ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
 }

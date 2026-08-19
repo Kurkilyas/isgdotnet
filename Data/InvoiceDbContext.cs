@@ -12,14 +12,14 @@ public class InvoiceDbContext : DbContext
 
     public DbSet<ExchangeRate> ExchangeRates { get; set; }
     public DbSet<InvoiceType> InvoiceTypes { get; set; }
-    public DbSet<InvoiceTypeDepartmentStep> InvoiceTypeDepartmentSteps { get; set; }
+    public DbSet<InvoiceTypeStep> InvoiceTypeSteps { get; set; }
+    public DbSet<InvoiceTypeStepApprover> InvoiceTypeStepApprovers { get; set; }
     public DbSet<SupplierCategory> SupplierCategories { get; set; }
     public DbSet<Supplier> Suppliers { get; set; }
     public DbSet<SupplierInvoiceType> SupplierInvoiceTypes { get; set; }
     public DbSet<Invoice> Invoices { get; set; }
     public DbSet<InvoiceLineItem> InvoiceLineItems { get; set; }
     public DbSet<InvoiceRelation> InvoiceRelations { get; set; }
-    public DbSet<WorkflowStepDefinition> WorkflowStepDefinitions { get; set; }
     public DbSet<WorkflowTransitionRule> WorkflowTransitionRules { get; set; }
     public DbSet<InvoiceWorkflowStep> InvoiceWorkflowSteps { get; set; }
     public DbSet<InvoiceWorkflowHistory> InvoiceWorkflowHistories { get; set; }
@@ -48,9 +48,9 @@ public class InvoiceDbContext : DbContext
             entity.HasQueryFilter(e => e.DeletedAt == null);
         });
 
-        modelBuilder.Entity<InvoiceTypeDepartmentStep>(entity =>
+        modelBuilder.Entity<InvoiceTypeStep>(entity =>
         {
-            entity.ToTable("invoice_type_department_steps");
+            entity.ToTable("invoice_type_steps");
             entity.HasIndex(e => new { e.InvoiceTypeId, e.StepOrder })
                   .IsUnique()
                   .HasDatabaseName("uq_invoice_type_step_order");
@@ -58,8 +58,27 @@ public class InvoiceDbContext : DbContext
             entity.Property(e => e.IsActive).HasDefaultValue(true);
 
             entity.HasOne(e => e.InvoiceType)
-                  .WithMany(t => t.DepartmentSteps)
+                  .WithMany(t => t.Steps)
                   .HasForeignKey(e => e.InvoiceTypeId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasQueryFilter(e => e.DeletedAt == null);
+        });
+
+        modelBuilder.Entity<InvoiceTypeStepApprover>(entity =>
+        {
+            entity.ToTable("invoice_type_step_approvers");
+            entity.HasIndex(e => new { e.InvoiceTypeStepId, e.Priority })
+                  .IsUnique()
+                  .HasDatabaseName("uq_step_approver_priority");
+            entity.HasIndex(e => new { e.InvoiceTypeStepId, e.UserId })
+                  .IsUnique()
+                  .HasDatabaseName("uq_step_approver_user");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+
+            entity.HasOne(e => e.InvoiceTypeStep)
+                  .WithMany(s => s.Approvers)
+                  .HasForeignKey(e => e.InvoiceTypeStepId)
                   .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasQueryFilter(e => e.DeletedAt == null);
@@ -198,24 +217,11 @@ public class InvoiceDbContext : DbContext
             entity.HasQueryFilter(e => e.Invoice.DeletedAt == null && e.RelatedInvoice.DeletedAt == null);
         });
 
-        modelBuilder.Entity<WorkflowStepDefinition>(entity =>
-        {
-            entity.ToTable("workflow_step_definitions");
-            entity.HasIndex(e => e.Code).IsUnique();
-            entity.Property(e => e.StepKind)
-                  .HasConversion<string>()
-                  .HasMaxLength(30)
-                  .HasDefaultValue(StepKind.Fixed);
-            entity.Property(e => e.MaxDurationDays).HasColumnType("decimal(5,2)");
-            entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.HasQueryFilter(e => e.DeletedAt == null);
-        });
-
         modelBuilder.Entity<WorkflowTransitionRule>(entity =>
         {
             entity.ToTable("workflow_transition_rules");
 
-            entity.HasIndex(e => new { e.TriggerAction, e.SourceStepCode })
+            entity.HasIndex(e => new { e.TriggerAction, e.SourceStepId })
                   .HasDatabaseName("ix_transition_rule_lookup");
 
             entity.Property(e => e.TriggerAction)
@@ -224,17 +230,15 @@ public class InvoiceDbContext : DbContext
             entity.Property(e => e.Priority).HasDefaultValue(100);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
 
-            // FK'lar workflow_step_definitions.code alternate key'ine bağlanır
             entity.HasOne(e => e.SourceStep)
                   .WithMany(d => d.SourceTransitionRules)
-                  .HasForeignKey(e => e.SourceStepCode)
-                  .HasPrincipalKey(d => d.Code)
+                  .HasForeignKey(e => e.SourceStepId)
                   .OnDelete(DeleteBehavior.SetNull);
 
+            // SourceStep -> SetNull zaten var; multiple cascade path oluşmaması için Restrict
             entity.HasOne(e => e.TargetStep)
                   .WithMany(d => d.TargetTransitionRules)
-                  .HasForeignKey(e => e.TargetStepCode)
-                  .HasPrincipalKey(d => d.Code)
+                  .HasForeignKey(e => e.TargetStepId)
                   .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasQueryFilter(e => e.DeletedAt == null);
@@ -242,11 +246,7 @@ public class InvoiceDbContext : DbContext
 
         modelBuilder.Entity<InvoiceWorkflowStep>(entity =>
         {
-            entity.ToTable("invoice_workflow_steps", tb =>
-                // step_definition_id ve department_step_id'den TAM OLARAK BİRİ dolu olmalı
-                tb.HasCheckConstraint(
-                    "ck_invoice_workflow_steps_exactly_one_source",
-                    "(StepDefinitionId IS NOT NULL AND DepartmentStepId IS NULL) OR (StepDefinitionId IS NULL AND DepartmentStepId IS NOT NULL)"));
+            entity.ToTable("invoice_workflow_steps");
 
             entity.HasIndex(e => new { e.DueAt, e.CompletedAt })
                   .HasDatabaseName("ix_workflow_steps_due");
@@ -260,15 +260,10 @@ public class InvoiceDbContext : DbContext
                   .HasForeignKey(e => e.InvoiceId)
                   .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasOne(e => e.StepDefinition)
-                  .WithMany(d => d.WorkflowSteps)
-                  .HasForeignKey(e => e.StepDefinitionId)
-                  .OnDelete(DeleteBehavior.SetNull);
-
-            entity.HasOne(e => e.DepartmentStep)
+            entity.HasOne(e => e.InvoiceTypeStep)
                   .WithMany(s => s.WorkflowSteps)
-                  .HasForeignKey(e => e.DepartmentStepId)
-                  .OnDelete(DeleteBehavior.SetNull);
+                  .HasForeignKey(e => e.InvoiceTypeStepId)
+                  .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasQueryFilter(e => e.Invoice.DeletedAt == null);
         });

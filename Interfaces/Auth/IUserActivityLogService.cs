@@ -11,6 +11,7 @@ public interface IUserActivityLogService
         int page = 1,
         int pageSize = 20,
         int? userId = null,
+        string? description = null,
         AuthActivityType? activityType = null);
     Task<UserActivityLogDto?> GetByIdAsync(int id);
 }

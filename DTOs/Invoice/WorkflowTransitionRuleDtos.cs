@@ -7,8 +7,8 @@ public class WorkflowTransitionRuleResponseDto
 {
     public int Id { get; set; }
     public WorkflowActionType TriggerAction { get; set; }
-    public string? SourceStepCode { get; set; }
-    public string TargetStepCode { get; set; } = null!;
+    public int? SourceStepId { get; set; }
+    public int TargetStepId { get; set; }
     public int Priority { get; set; }
     public bool IsActive { get; set; }
 }
@@ -18,11 +18,10 @@ public class CreateWorkflowTransitionRuleRequestDto
     [Required]
     public WorkflowActionType TriggerAction { get; set; }
 
-    [MaxLength(30)]
-    public string? SourceStepCode { get; set; }
+    public int? SourceStepId { get; set; }
 
-    [Required, MaxLength(30)]
-    public string TargetStepCode { get; set; } = null!;
+    [Required]
+    public int TargetStepId { get; set; }
 
     public int Priority { get; set; } = 100;
 
@@ -34,11 +33,10 @@ public class UpdateWorkflowTransitionRuleRequestDto
     [Required]
     public int Id { get; set; }
 
-    [MaxLength(30)]
-    public string? SourceStepCode { get; set; }
+    public int? SourceStepId { get; set; }
 
-    [Required, MaxLength(30)]
-    public string TargetStepCode { get; set; } = null!;
+    [Required]
+    public int TargetStepId { get; set; }
 
     public int Priority { get; set; }
 

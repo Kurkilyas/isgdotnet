@@ -10,7 +10,7 @@ public class InvoiceTypeResponseDto
     public bool IsActive { get; set; }
     public DateTime? CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
-    public List<InvoiceTypeDepartmentStepResponseDto> DepartmentSteps { get; set; } = new();
+    public List<InvoiceTypeStepResponseDto> Steps { get; set; } = new();
 }
 
 public class CreateInvoiceTypeRequestDto

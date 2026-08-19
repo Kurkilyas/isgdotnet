@@ -33,6 +33,13 @@ public class User : IAuditableEntity, ISoftDeletable
     [MaxLength(100)]
     public string? Position { get; set; }
 
+    /// <summary>Kullanıcı şu an izinli/müsait değil mi. Workflow atama motoru bu bayrağa bakarak
+    /// InvoiceTypeStepApprover zincirinde bir sonraki öncelikli kişiye otomatik geçer.</summary>
+    public bool IsOutOfOffice { get; set; }
+
+    /// <summary>İzin/müsaitsizlik bitiş tahmini (bilgi amaçlı).</summary>
+    public DateTime? OutOfOfficeUntil { get; set; }
+
     public DateTime? CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public DateTime? DeletedAt { get; set; }
