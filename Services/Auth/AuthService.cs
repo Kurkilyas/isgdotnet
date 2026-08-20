@@ -22,6 +22,7 @@ public class AuthService : IAuthService
 
     private const int MaxFailedLogins = 5;
     private const int LockoutMinutes = 15;
+    private const string AllowedRegistrationEmailDomain = "cazgir.com.tr";
 
     private readonly UserDbContext _context;
     private readonly IEmailService _emailService;
@@ -52,6 +53,12 @@ public class AuthService : IAuthService
     public async Task<RegisterResponseDto> RegisterAsync(RegisterRequestDto request)
     {
         var email = request.Email.Trim().ToLowerInvariant();
+
+        if (!IsAllowedRegistrationEmail(email))
+        {
+            throw new BadRequestException(
+                $"Kayıt yalnızca @{AllowedRegistrationEmailDomain} e-posta adresleriyle yapılabilir.");
+        }
 
         var existing = await _context.Users
             .FirstOrDefaultAsync(u => u.Email == email);
@@ -184,12 +191,12 @@ public class AuthService : IAuthService
 
         if (user.LockedUntil.HasValue && user.LockedUntil.Value > now)
         {
-            throw new UnauthorizedException("Hesap geçici olarak kilitli. Lütfen daha sonra tekrar deneyin.");
+            throw new UnauthorizedException("Hesap geçici olarak kilitli. Lütfen daha sonra tekrar deneyin veya Sistem Yöneticinize başvurun.");
         }
 
         if (!user.IsActive)
         {
-            throw new UnauthorizedException("Hesap pasif durumda.");
+            throw new UnauthorizedException("Hesap pasif durumda. Lütfen Sistem Yöneticinize başvurun.");
         }
 
         if (!user.IsVerified)
@@ -428,6 +435,18 @@ public class AuthService : IAuthService
             Position = user.Position,
             CreatedAt = user.CreatedAt
         };
+    }
+
+    private static bool IsAllowedRegistrationEmail(string email)
+    {
+        var atIndex = email.LastIndexOf('@');
+        if (atIndex <= 0 || atIndex == email.Length - 1)
+        {
+            return false;
+        }
+
+        var domain = email[(atIndex + 1)..];
+        return domain.Equals(AllowedRegistrationEmailDomain, StringComparison.OrdinalIgnoreCase);
     }
 
     private static string HashCode(string code)
