@@ -28,6 +28,7 @@ Table roles {
   display_name varchar(100) [not null, note: 'Ekranda gösterilecek okunabilir rol adı']
   description text [note: 'Rolün ne işe yaradığına dair açıklama']
   is_active bool [not null, default: true, note: 'Rol hâlâ atanabilir mi']
+  is_manager bool [not null, default: false, note: 'true ise bu role sahip kullanıcı kendi departmanındaki kullanıcıları listeleyebilir (UserRead gerekmez). UserRead varsa tüm kullanıcılar görünür.']
   department_id int [note: 'FK -> departments.id, bu rol hangi departmana ait']
   created_at datetime [note: 'Kayıt oluşturulma zamanı']
   deleted_at datetime [note: 'SOFT DELETE']

@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using System.Text;
-using InvoiceTrackingSystemBackend.Common;
 using InvoiceTrackingSystemBackend.Constants;
 using InvoiceTrackingSystemBackend.Data;
 using InvoiceTrackingSystemBackend.DTOs.Auth;
@@ -297,55 +296,6 @@ public class AuthService : IAuthService
         await _activityLogService.LogAsync(existing.UserId, AuthActivityType.LOGOUT, "Çıkış yapıldı.");
     }
 
-    public async Task<PagedResult<UserListDto>> GetListAsync(int page = 1, int pageSize = 20)
-    {
-        if (page < 1) page = 1;
-        if (pageSize < 1) pageSize = 20;
-
-        var query = _context.Users.AsNoTracking();
-        var totalCount = await query.CountAsync();
-
-        var items = await query
-            .OrderBy(u => u.Id)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(u => new UserListDto
-            {
-                Id = u.Id,
-                FullName = u.FullName,
-                Email = u.Email,
-                IsActive = u.IsActive,
-                IsVerified = u.IsVerified,
-                DepartmentId = u.DepartmentId,
-                Phone = u.Phone,
-                Position = u.Position,
-                CreatedAt = u.CreatedAt
-            })
-            .ToListAsync();
-
-        return PagedResult<UserListDto>.Create(items, totalCount, page, pageSize);
-    }
-
-    public async Task<UserListDto?> GetByIdAsync(int id)
-    {
-        return await _context.Users
-            .AsNoTracking()
-            .Where(u => u.Id == id)
-            .Select(u => new UserListDto
-            {
-                Id = u.Id,
-                FullName = u.FullName,
-                Email = u.Email,
-                IsActive = u.IsActive,
-                IsVerified = u.IsVerified,
-                DepartmentId = u.DepartmentId,
-                Phone = u.Phone,
-                Position = u.Position,
-                CreatedAt = u.CreatedAt
-            })
-            .FirstOrDefaultAsync();
-    }
-
     private async Task<string> IssueEmailVerificationCodeAsync(User user)
     {
         var now = DateTime.UtcNow;
@@ -375,6 +325,7 @@ public class AuthService : IAuthService
             CreatedAt = now
         });
 
+        await _context.SaveChangesAsync();
         return code;
     }
 

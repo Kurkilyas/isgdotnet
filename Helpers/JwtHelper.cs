@@ -28,8 +28,9 @@ public class JwtHelper : IJwtHelper
         var now = DateTime.UtcNow;
         var roles = await GetUserRolesAsync(user.Id, now);
         var permissions = await GetUserPermissionsAsync(user.Id, now);
+        var isManager = await IsDepartmentManagerAsync(user.Id, now);
         var accessExpiresAt = now.AddMinutes(_jwt.AccessTokenExpiryMinutes);
-        var accessToken = GenerateAccessToken(user, roles, permissions, accessExpiresAt);
+        var accessToken = GenerateAccessToken(user, roles, permissions, isManager, accessExpiresAt);
         var refreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
 
         return (accessToken, refreshToken, accessExpiresAt);
@@ -41,7 +42,12 @@ public class JwtHelper : IJwtHelper
         return Convert.ToHexString(bytes);
     }
 
-    private string GenerateAccessToken(User user, List<string> roles, List<string> permissions, DateTime expiresAt)
+    private string GenerateAccessToken(
+        User user,
+        List<string> roles,
+        List<string> permissions,
+        bool isManager,
+        DateTime expiresAt)
     {
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.Key));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
@@ -52,6 +58,7 @@ public class JwtHelper : IJwtHelper
             new(ClaimTypes.Email, user.Email),
             new(ClaimTypes.Name, user.FullName),
             new("email_verified", user.IsVerified.ToString().ToLowerInvariant()),
+            new("is_manager", isManager.ToString().ToLowerInvariant()),
             new("Roles", string.Join(",", roles)),
             new("Permissions", string.Join(",", permissions))
         };
@@ -89,6 +96,18 @@ public class JwtHelper : IJwtHelper
             .Select(ur => ur.Role.Name)
             .Distinct()
             .ToListAsync();
+    }
+
+    private async Task<bool> IsDepartmentManagerAsync(int userId, DateTime now)
+    {
+        return await _context.UserRoles
+            .AsNoTracking()
+            .AnyAsync(ur =>
+                ur.UserId == userId &&
+                ur.IsActive &&
+                (ur.ExpiresAt == null || ur.ExpiresAt > now) &&
+                ur.Role.IsActive &&
+                ur.Role.IsManager);
     }
 
     private async Task<List<string>> GetUserPermissionsAsync(int userId, DateTime now)

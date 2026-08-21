@@ -15,6 +15,8 @@ Bu dosya, Fatura Takip backend’ine bağlanacak TypeScript (React / Next / Vite
 - Diğer mevcut controller’lar `[Authorize]` — token yoksa 401
 - İzin (`Permission`) attribute’ları henüz endpoint’lere bağlanmadı; token claim’inde gelecek, UI’da sonra kullanılacak
 
+**Users / profil / imza API’si:** ayrı dosya → [FRONTEND_USERS.md](FRONTEND_USERS.md)
+
 ## Hata gövdesi
 
 ```ts
@@ -119,6 +121,23 @@ export interface User {
   createdAt?: string | null;
 }
 
+export interface UserMe extends User {
+  isOutOfOffice: boolean;
+  outOfOfficeUntil?: string | null;
+  hasProfilePhoto: boolean;
+  hasSignature: boolean;
+}
+
+export type UserFileKind = "PROFILE_PHOTO" | "SIGNATURE";
+
+export interface UserFileMeta {
+  fileKind: UserFileKind;
+  originalFileName: string;
+  contentType: string;
+  fileSizeBytes?: number | null;
+  uploadedAt?: string | null;
+}
+
 export interface AuthResponse {
   accessToken: string;
   accessExpiresAt: string; // ISO datetime
@@ -137,7 +156,10 @@ export type AuthActivityType =
   | "ACCOUNT_LOCKED"
   | "ACCOUNT_UNLOCKED"
   | "ROLE_ASSIGNED"
-  | "ROLE_REVOKED";
+  | "ROLE_REVOKED"
+  | "PROFILE_UPDATED"
+  | "OUT_OF_OFFICE_CHANGED"
+  | "FILE_UPLOADED";
 
 export interface UserActivityLog {
   id: number;
@@ -314,9 +336,42 @@ Akış: kayıt → `developmentCode` (dev) veya e-posta → `verifyEmail` → `l
 ```ts
 import http from "./http";
 import type { PagedResult } from "../types/api";
-import type { User } from "../types/auth";
+import type { User, UserFileKind, UserFileMeta, UserMe } from "../types/auth";
 
 export const userService = {
+  getMe: () => http.get<UserMe>("/api/users/me").then((r) => r.data),
+
+  updateMe: (body: { fullName: string; phone?: string | null; position?: string | null }) =>
+    http.put<UserMe>("/api/users/me", body).then((r) => r.data),
+
+  changePassword: (body: { currentPassword: string; newPassword: string }) =>
+    http.put("/api/users/me/password", body).then((r) => r.data),
+
+  updateOutOfOffice: (body: { isOutOfOffice: boolean; outOfOfficeUntil?: string | null }) =>
+    http.put<UserMe>("/api/users/me/out-of-office", body).then((r) => r.data),
+
+  uploadMyFile: (fileKind: UserFileKind, file: File) => {
+    const form = new FormData();
+    form.append("fileKind", fileKind);
+    form.append("file", file);
+    return http
+      .post<UserFileMeta>("/api/users/me/files", form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+      .then((r) => r.data);
+  },
+
+  getMyFileMeta: (fileKind: UserFileKind) =>
+    http.get<UserFileMeta>(`/api/users/me/files/${fileKind}`).then((r) => r.data),
+
+  /** img src için blob URL üret. */
+  getMyFileContentUrl: async (fileKind: UserFileKind) => {
+    const res = await http.get(`/api/users/me/files/${fileKind}/content`, {
+      responseType: "blob",
+    });
+    return URL.createObjectURL(res.data);
+  },
+
   getList: (page = 1, pageSize = 20) =>
     http
       .get<PagedResult<User>>("/api/users", { params: { page, pageSize } })

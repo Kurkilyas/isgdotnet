@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
@@ -18,6 +19,9 @@ public class PermissionAttribute : Attribute, IAuthorizationFilter
         _requiredPermissions = requiredPermissions ?? throw new ArgumentNullException(nameof(requiredPermissions));
     }
 
+    /// <summary>true ise UserRead yokken IsManager claim'i de geçerlidir (departman filtresi serviste uygulanır).</summary>
+    public bool AllowDepartmentManager { get; set; }
+
     public void OnAuthorization(AuthorizationFilterContext context)
     {
         if (context.HttpContext.User.Identity?.IsAuthenticated != true)
@@ -27,6 +31,18 @@ public class PermissionAttribute : Attribute, IAuthorizationFilter
         }
 
         var userPermissions = PermissionClaimReader.GetPermissions(context);
+        var hasRequiredPermission = _requiredPermissions.Any(required =>
+            userPermissions.Contains(required));
+
+        if (hasRequiredPermission)
+        {
+            return;
+        }
+
+        if (AllowDepartmentManager && PermissionClaimReader.IsDepartmentManager(context))
+        {
+            return;
+        }
 
         if (userPermissions.Count == 0)
         {
@@ -34,14 +50,8 @@ public class PermissionAttribute : Attribute, IAuthorizationFilter
             return;
         }
 
-        var hasRequiredPermission = _requiredPermissions.Any(required =>
-            userPermissions.Contains(required));
-
-        if (!hasRequiredPermission)
-        {
-            context.Result = PermissionClaimReader.Forbid(
-                $"Gerekli izinler: {string.Join(", ", _requiredPermissions)}");
-        }
+        context.Result = PermissionClaimReader.Forbid(
+            $"Gerekli izinler: {string.Join(", ", _requiredPermissions)}");
     }
 }
 
@@ -101,6 +111,12 @@ internal static class PermissionClaimReader
         }
 
         return result;
+    }
+
+    public static bool IsDepartmentManager(AuthorizationFilterContext context)
+    {
+        var value = context.HttpContext.User.FindFirst("is_manager")?.Value;
+        return bool.TryParse(value, out var isManager) && isManager;
     }
 
     public static ObjectResult Forbid(string error)

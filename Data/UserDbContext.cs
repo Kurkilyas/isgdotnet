@@ -36,6 +36,7 @@ public class UserDbContext : DbContext
             entity.ToTable("roles");
             entity.HasIndex(e => e.Name).IsUnique();
             entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.IsManager).HasDefaultValue(false);
 
             entity.HasOne(e => e.Department)
                   .WithMany(d => d.Roles)

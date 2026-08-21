@@ -53,6 +53,11 @@ public class ExceptionMiddleware
                 message = exception.Message;
                 break;
 
+            case ForbiddenException:
+                statusCode = (int)HttpStatusCode.Forbidden;
+                message = exception.Message;
+                break;
+
             // 2. GEÇERSİZ İSTEK / İHLAL EDİLEN İŞ KURALI (400)
             case BadRequestException:
             case ArgumentException:
