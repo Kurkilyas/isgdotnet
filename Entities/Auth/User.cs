@@ -30,6 +30,7 @@ public class User : IAuditableEntity, ISoftDeletable
     public DateTime? LastLoginAt { get; set; }
     public DateTime? PasswordChangedAt { get; set; }
 
+    /// <summary>DB kolonu durur; API yazmaz. Cevaplardaki <c>position</c> aktif rollerin DisplayName birleşimidir.</summary>
     [MaxLength(100)]
     public string? Position { get; set; }
 

@@ -8,6 +8,8 @@ public interface IUserService
 {
     Task<PagedResult<UserListDto>> GetListAsync(int actorUserId, int page = 1, int pageSize = 20);
     Task<UserListDto?> GetByIdAsync(int actorUserId, int id);
+    Task<UserListDto> UpdateUserAsync(int actorUserId, int id, UpdateUserRequestDto request);
+    Task<UserListDto> SetUserActiveAsync(int actorUserId, int id, SetUserActiveRequestDto request);
     Task<UserMeDto> GetMeAsync(int userId);
     Task<UserMeDto> UpdateMeAsync(int userId, UpdateMeRequestDto request);
     Task ChangePasswordAsync(int userId, ChangePasswordRequestDto request);

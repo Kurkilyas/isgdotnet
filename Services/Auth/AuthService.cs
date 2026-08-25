@@ -5,6 +5,7 @@ using InvoiceTrackingSystemBackend.Data;
 using InvoiceTrackingSystemBackend.DTOs.Auth;
 using InvoiceTrackingSystemBackend.Entities.Auth;
 using InvoiceTrackingSystemBackend.Exceptions;
+using InvoiceTrackingSystemBackend.Helpers;
 using InvoiceTrackingSystemBackend.Interfaces;
 using InvoiceTrackingSystemBackend.Interfaces.Auth;
 using InvoiceTrackingSystemBackend.Settings;
@@ -22,6 +23,8 @@ public class AuthService : IAuthService
     private const int MaxFailedLogins = 5;
     private const int LockoutMinutes = 15;
     private const string AllowedRegistrationEmailDomain = "cazgir.com.tr";
+    private const string VerificationLockMessage =
+        "Doğrulama deneme hakkı dolduğu için hesabınız kilitlendi. Sistem yöneticinizle iletişime geçin.";
 
     private readonly UserDbContext _context;
     private readonly IEmailService _emailService;
@@ -65,6 +68,12 @@ public class AuthService : IAuthService
         if (existing is not null && existing.IsVerified)
         {
             throw new ConflictException("Bu e-posta adresi zaten kayıtlı.");
+        }
+
+        if (existing is not null && !existing.IsActive)
+        {
+            throw new ForbiddenException(
+                "Hesabınız kilitli. Yeni doğrulama kodu gönderilemez. Sistem yöneticinizle iletişime geçin.");
         }
 
         User user;
@@ -133,6 +142,8 @@ public class AuthService : IAuthService
             throw new BadRequestException("E-posta adresi zaten doğrulanmış.");
         }
 
+        EnsureAccountNotLocked(user);
+
         var now = DateTime.UtcNow;
         var verification = await _context.UserVerificationCodes
             .Where(c =>
@@ -150,14 +161,19 @@ public class AuthService : IAuthService
 
         if (verification.AttemptCount >= MaxCodeAttempts)
         {
-            verification.DeletedAt = now;
-            await _context.SaveChangesAsync();
-            throw new BadRequestException("Doğrulama kodu deneme hakkı doldu. Lütfen yeni kod isteyin.");
+            await LockAccountAfterVerificationAbuseAsync(user, verification);
+            throw new ForbiddenException(VerificationLockMessage);
         }
 
         if (!FixedTimeEquals(verification.CodeHash, HashCode(request.Code.Trim())))
         {
             verification.AttemptCount++;
+            if (verification.AttemptCount >= MaxCodeAttempts)
+            {
+                await LockAccountAfterVerificationAbuseAsync(user, verification);
+                throw new ForbiddenException(VerificationLockMessage);
+            }
+
             await _context.SaveChangesAsync();
             throw new BadRequestException("Doğrulama kodu hatalı.");
         }
@@ -173,6 +189,68 @@ public class AuthService : IAuthService
             Id = user.Id,
             Email = user.Email,
             IsVerified = user.IsVerified
+        };
+    }
+
+    public async Task<RegisterResponseDto> ResendEmailVerificationAsync(ResendVerificationRequestDto request)
+    {
+        var email = request.Email.Trim().ToLowerInvariant();
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+        if (user is null)
+        {
+            throw new NotFoundException("Kullanıcı bulunamadı.");
+        }
+
+        if (user.IsVerified)
+        {
+            throw new BadRequestException("E-posta adresi zaten doğrulanmış.");
+        }
+
+        EnsureAccountNotLocked(user);
+
+        var now = DateTime.UtcNow;
+        var activeCode = await _context.UserVerificationCodes
+            .Where(c =>
+                c.UserId == user.Id &&
+                c.Purpose == VerificationPurpose.EMAIL_VERIFY &&
+                c.UsedAt == null &&
+                c.ExpiresAt > now)
+            .OrderByDescending(c => c.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        if (activeCode is not null)
+        {
+            if (activeCode.AttemptCount >= MaxCodeAttempts)
+            {
+                await LockAccountAfterVerificationAbuseAsync(user, activeCode);
+                throw new ForbiddenException(VerificationLockMessage);
+            }
+
+            var remainingMinutes = Math.Max(1, (int)Math.Ceiling((activeCode.ExpiresAt - now).TotalMinutes));
+            throw new BadRequestException(
+                $"Aktif bir doğrulama kodunuz zaten var. Yeni kod istemek için {remainingMinutes} dakika bekleyin.");
+        }
+
+        var code = await IssueEmailVerificationCodeAsync(user);
+
+        await _emailService.SendAsync(
+            EmailType.EmailVerification,
+            [user.Email],
+            placeholders: new Dictionary<string, string>
+            {
+                ["FullName"] = user.FullName,
+                ["Code"] = code,
+                ["ExpireMinutes"] = CodeExpireMinutes.ToString()
+            });
+
+        return new RegisterResponseDto
+        {
+            Id = user.Id,
+            Email = user.Email,
+            IsVerified = user.IsVerified,
+            Message = "Doğrulama kodu e-posta adresinize tekrar gönderildi.",
+            DevelopmentCode = _env.IsDevelopment() ? code : null
         };
     }
 
@@ -353,7 +431,7 @@ public class AuthService : IAuthService
             {
                 AccessToken = accessToken,
                 AccessExpiresAt = accessExpiresAt,
-                User = MapUser(user)
+                User = await MapUserAsync(user)
             }
         };
     }
@@ -372,7 +450,7 @@ public class AuthService : IAuthService
         await _context.SaveChangesAsync();
     }
 
-    private static UserListDto MapUser(User user)
+    private async Task<UserListDto> MapUserAsync(User user)
     {
         return new UserListDto
         {
@@ -383,9 +461,30 @@ public class AuthService : IAuthService
             IsVerified = user.IsVerified,
             DepartmentId = user.DepartmentId,
             Phone = user.Phone,
-            Position = user.Position,
+            Position = await UserPositionHelper.ResolveAsync(_context, user.Id),
             CreatedAt = user.CreatedAt
         };
+    }
+
+    private static void EnsureAccountNotLocked(User user)
+    {
+        if (!user.IsActive)
+        {
+            throw new ForbiddenException(VerificationLockMessage);
+        }
+    }
+
+    private async Task LockAccountAfterVerificationAbuseAsync(User user, UserVerificationCode code)
+    {
+        var now = DateTime.UtcNow;
+        code.DeletedAt = now;
+        user.IsActive = false;
+        user.UpdatedAt = now;
+        await _context.SaveChangesAsync();
+        await _activityLogService.LogAsync(
+            user.Id,
+            AuthActivityType.ACCOUNT_LOCKED,
+            "E-posta doğrulama deneme hakkı doldu (5 hatalı deneme).");
     }
 
     private static bool IsAllowedRegistrationEmail(string email)

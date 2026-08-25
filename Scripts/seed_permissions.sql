@@ -7,6 +7,8 @@ SELECT v.[Name], v.[DisplayName], 1, GETUTCDATE(), NULL
 FROM (VALUES
     ('UserRead',        N'Kullanıcı Görüntüleme'),
     ('UserWrite',       N'Kullanıcı Yönetimi'),
+    ('AdminRead',       N'Rol ve Yetki Görüntüleme'),
+    ('AdminWrite',      N'Rol ve Yetki Yönetimi'),
     ('SettingsRead',    N'Sistem Ayarları Görüntüleme'),
     ('SettingsWrite',   N'Sistem Ayarları Yönetimi'),
     ('InvoiceRead',     N'Fatura Görüntüleme'),

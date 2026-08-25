@@ -5,6 +5,7 @@ using InvoiceTrackingSystemBackend.Data;
 using InvoiceTrackingSystemBackend.DTOs.Auth;
 using InvoiceTrackingSystemBackend.Entities.Auth;
 using InvoiceTrackingSystemBackend.Exceptions;
+using InvoiceTrackingSystemBackend.Helpers;
 using InvoiceTrackingSystemBackend.Interfaces;
 using InvoiceTrackingSystemBackend.Interfaces.Auth;
 using InvoiceTrackingSystemBackend.Settings;
@@ -44,9 +45,8 @@ public class UserService : IUserService
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 20;
 
-        var scope = await ResolveUserDirectoryScopeAsync(actorUserId);
+        var scope = await GetActorScopeAsync(actorUserId);
         var query = _context.Users.AsNoTracking();
-
         if (scope.DepartmentId.HasValue)
         {
             query = query.Where(u => u.DepartmentId == scope.DepartmentId.Value);
@@ -60,84 +60,144 @@ public class UserService : IUserService
             .Take(pageSize)
             .ToListAsync();
 
-        var items = users.Select(MapList).ToList();
+        var positions = await UserPositionHelper.ResolveManyAsync(_context, users.Select(u => u.Id).ToList());
+        var items = users.Select(u => MapList(u, positions.GetValueOrDefault(u.Id))).ToList();
 
         return PagedResult<UserListDto>.Create(items, totalCount, page, pageSize);
     }
 
     public async Task<UserListDto?> GetByIdAsync(int actorUserId, int id)
     {
-        var scope = await ResolveUserDirectoryScopeAsync(actorUserId);
+        var scope = await GetActorScopeAsync(actorUserId);
         var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
         if (user is null)
         {
             return null;
         }
 
-        if (scope.DepartmentId.HasValue && user.DepartmentId != scope.DepartmentId.Value)
+        EnsureInScope(user, scope, "Bu kullanıcıyı görüntüleme yetkiniz yok.");
+
+        return MapList(user, await UserPositionHelper.ResolveAsync(_context, user.Id));
+    }
+
+    public async Task<UserListDto> UpdateUserAsync(int actorUserId, int id, UpdateUserRequestDto request)
+    {
+        var user = await GetManagedUserAsync(actorUserId, id, "Bu kullanıcıyı güncelleme yetkiniz yok.");
+
+        user.FullName = request.FullName.Trim();
+        user.Phone = string.IsNullOrWhiteSpace(request.Phone) ? null : request.Phone.Trim();
+
+        user.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+        await _activityLogService.LogAsync(
+            user.Id,
+            AuthActivityType.USER_UPDATED,
+            $"Kullanıcı bilgileri güncellendi (işlemi yapan: {actorUserId}).");
+
+        return MapList(user, await UserPositionHelper.ResolveAsync(_context, user.Id));
+    }
+
+    public async Task<UserListDto> SetUserActiveAsync(int actorUserId, int id, SetUserActiveRequestDto request)
+    {
+        if (actorUserId == id)
         {
-            throw new ForbiddenException("Bu kullanıcıyı görüntüleme yetkiniz yok.");
+            throw new ForbiddenException("Kendi hesabınızın durumunu bu endpoint ile değiştiremezsiniz.");
         }
 
-        return MapList(user);
+        var user = await GetManagedUserAsync(actorUserId, id, "Bu kullanıcının durumunu değiştirme yetkiniz yok.");
+
+        if (user.IsActive == request.IsActive)
+        {
+            return MapList(user, await UserPositionHelper.ResolveAsync(_context, user.Id));
+        }
+
+        var now = DateTime.UtcNow;
+        user.IsActive = request.IsActive;
+        user.UpdatedAt = now;
+
+        if (request.IsActive)
+        {
+            user.FailedLoginCount = 0;
+            user.LockedUntil = null;
+        }
+        else
+        {
+            var tokens = await _context.RefreshTokens
+                .Where(t => t.UserId == user.Id && t.RevokedAt == null)
+                .ToListAsync();
+            foreach (var token in tokens)
+            {
+                token.RevokedAt = now;
+            }
+        }
+
+        await _context.SaveChangesAsync();
+        await _activityLogService.LogAsync(
+            user.Id,
+            request.IsActive ? AuthActivityType.ACCOUNT_UNLOCKED : AuthActivityType.USER_DEACTIVATED,
+            request.IsActive
+                ? $"Hesap yeniden aktif edildi (işlemi yapan: {actorUserId})."
+                : $"Hesap pasife alındı (işlemi yapan: {actorUserId}).");
+
+        return MapList(user, await UserPositionHelper.ResolveAsync(_context, user.Id));
     }
 
     /// <summary>
-    /// UserRead: tüm kullanıcılar (DepartmentId = null).
-    /// IsManager: yalnızca kendi departmanı.
+    /// Kapsam: kullanıcının DepartmentId, yoksa atanan rolün DepartmentId.
+    /// İkisi de boşsa (admin) filtresiz.
     /// </summary>
-    private async Task<UserDirectoryScope> ResolveUserDirectoryScopeAsync(int actorUserId)
+    private async Task<ActorScope> GetActorScopeAsync(int actorUserId)
     {
         var now = DateTime.UtcNow;
-        var roles = await _context.UserRoles
-            .AsNoTracking()
-            .Where(ur =>
-                ur.UserId == actorUserId &&
-                ur.IsActive &&
-                (ur.ExpiresAt == null || ur.ExpiresAt > now) &&
-                ur.Role.IsActive)
-            .Select(ur => new
-            {
-                ur.Role.IsManager,
-                ur.Role.DepartmentId,
-                PermissionNames = ur.Role.RolePermissions
-                    .Where(rp => rp.Permission.IsActive)
-                    .Select(rp => rp.Permission.Name)
-            })
-            .ToListAsync();
-
-        var hasUserRead = roles
-            .SelectMany(r => r.PermissionNames)
-            .Any(name => name == "UserRead");
-
-        if (hasUserRead)
-        {
-            return new UserDirectoryScope(null);
-        }
-
-        if (!roles.Any(r => r.IsManager))
-        {
-            throw new ForbiddenException("Kullanıcı listesini görüntüleme yetkiniz yok.");
-        }
-
-        var actorDepartmentId = await _context.Users
+        var departmentId = await _context.Users
             .AsNoTracking()
             .Where(u => u.Id == actorUserId)
             .Select(u => u.DepartmentId)
             .FirstOrDefaultAsync();
 
-        var departmentId = actorDepartmentId
-            ?? roles.Where(r => r.IsManager).Select(r => r.DepartmentId).FirstOrDefault(id => id.HasValue);
-
         if (!departmentId.HasValue)
         {
-            throw new ForbiddenException("Müdür hesabına departman atanmadığı için kullanıcı listesi görüntülenemez.");
+            departmentId = await _context.UserRoles
+                .AsNoTracking()
+                .Where(ur =>
+                    ur.UserId == actorUserId &&
+                    ur.IsActive &&
+                    (ur.ExpiresAt == null || ur.ExpiresAt > now) &&
+                    ur.Role.IsActive &&
+                    ur.Role.DepartmentId != null)
+                .Select(ur => ur.Role.DepartmentId)
+                .FirstOrDefaultAsync();
         }
 
-        return new UserDirectoryScope(departmentId);
+        return departmentId.HasValue
+            ? ActorScope.Department(departmentId.Value)
+            : ActorScope.Global();
     }
 
-    private sealed record UserDirectoryScope(int? DepartmentId);
+    private async Task<User> GetManagedUserAsync(
+        int actorUserId,
+        int targetUserId,
+        string forbiddenMessage)
+    {
+        var scope = await GetActorScopeAsync(actorUserId);
+        var user = await GetRequiredUserAsync(targetUserId);
+        EnsureInScope(user, scope, forbiddenMessage);
+        return user;
+    }
+
+    private static void EnsureInScope(User user, ActorScope scope, string forbiddenMessage)
+    {
+        if (scope.DepartmentId.HasValue && user.DepartmentId != scope.DepartmentId.Value)
+        {
+            throw new ForbiddenException(forbiddenMessage);
+        }
+    }
+
+    private sealed record ActorScope(int? DepartmentId)
+    {
+        public static ActorScope Global() => new((int?)null);
+        public static ActorScope Department(int departmentId) => new(departmentId);
+    }
 
     public async Task<UserMeDto> GetMeAsync(int userId)
     {
@@ -150,7 +210,6 @@ public class UserService : IUserService
         var user = await GetRequiredUserAsync(userId);
         user.FullName = request.FullName.Trim();
         user.Phone = string.IsNullOrWhiteSpace(request.Phone) ? null : request.Phone.Trim();
-        user.Position = string.IsNullOrWhiteSpace(request.Position) ? null : request.Position.Trim();
         user.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
         await _activityLogService.LogAsync(user.Id, AuthActivityType.PROFILE_UPDATED, "Profil bilgileri güncellendi.");
@@ -208,10 +267,11 @@ public class UserService : IUserService
         {
             throw new BadRequestException("Yalnızca PNG, JPEG veya WebP görselleri yüklenebilir.");
         }
+        
 
         var user = await GetRequiredUserAsync(userId);
         var folder = fileKind == UserFileKind.SIGNATURE ? "signatures" : "photos";
-        var relativePath = $"users/{folder}/{userId}/{Guid.NewGuid():N}{extension}";
+        var relativePath = $"users/{folder}/{user.FullName.Replace(" ", "_")}/{Guid.NewGuid():N}{extension}";
 
         string checksum;
         await using (var hashStream = file.OpenReadStream())
@@ -315,7 +375,7 @@ public class UserService : IUserService
             IsVerified = user.IsVerified,
             DepartmentId = user.DepartmentId,
             Phone = user.Phone,
-            Position = user.Position,
+            Position = await UserPositionHelper.ResolveAsync(_context, user.Id),
             IsOutOfOffice = user.IsOutOfOffice,
             OutOfOfficeUntil = user.OutOfOfficeUntil,
             HasProfilePhoto = kinds.Contains(UserFileKind.PROFILE_PHOTO),
@@ -324,7 +384,7 @@ public class UserService : IUserService
         };
     }
 
-    private static UserListDto MapList(User user)
+    private static UserListDto MapList(User user, string? position)
     {
         return new UserListDto
         {
@@ -335,7 +395,7 @@ public class UserService : IUserService
             IsVerified = user.IsVerified,
             DepartmentId = user.DepartmentId,
             Phone = user.Phone,
-            Position = user.Position,
+            Position = position,
             CreatedAt = user.CreatedAt
         };
     }
@@ -351,4 +411,6 @@ public class UserService : IUserService
             UploadedAt = file.CreatedAt
         };
     }
+
+    
 }

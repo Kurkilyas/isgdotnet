@@ -150,6 +150,7 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IUserActivityLogService, UserActivityLogService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IStorageService, StorageService>();
 builder.Services.AddScoped<ITblCariService, TblCariService>();
 builder.Services.AddScoped<ITblMuhCariHesapKodlariService, TblMuhCariHesapKodlariService>();

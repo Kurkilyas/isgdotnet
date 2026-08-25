@@ -94,6 +94,22 @@ public class UsersController : ControllerBase
         return Ok(result);
     }
 
+    [HttpPut("{id:int}")]
+    [Permission("UserWrite", AllowDepartmentManager = true)]
+    public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserRequestDto request)
+    {
+        var result = await _userService.UpdateUserAsync(GetCurrentUserId(), id, request);
+        return Ok(result);
+    }
+
+    [HttpPut("{id:int}/status")]
+    [Permission("UserWrite", AllowDepartmentManager = true)]
+    public async Task<IActionResult> SetUserActive(int id, [FromBody] SetUserActiveRequestDto request)
+    {
+        var result = await _userService.SetUserActiveAsync(GetCurrentUserId(), id, request);
+        return Ok(result);
+    }
+
     private int GetCurrentUserId()
     {
         var value = User.FindFirstValue(ClaimTypes.NameIdentifier);

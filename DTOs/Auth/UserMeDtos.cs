@@ -27,9 +27,21 @@ public class UpdateMeRequestDto
 
     [MaxLength(20)]
     public string? Phone { get; set; }
+}
 
-    [MaxLength(100)]
-    public string? Position { get; set; }
+public class UpdateUserRequestDto
+{
+    [Required, MaxLength(100)]
+    public string FullName { get; set; } = null!;
+
+    [MaxLength(20)]
+    public string? Phone { get; set; }
+}
+
+public class SetUserActiveRequestDto
+{
+    [Required]
+    public bool IsActive { get; set; }
 }
 
 public class ChangePasswordRequestDto
