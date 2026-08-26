@@ -8,6 +8,7 @@ public class UserListDto
     public bool IsActive { get; set; }
     public bool IsVerified { get; set; }
     public int? DepartmentId { get; set; }
+    public string? DepartmentName { get; set; }
     public string? Phone { get; set; }
     public string? Position { get; set; }
     public DateTime? CreatedAt { get; set; }

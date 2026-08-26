@@ -49,7 +49,17 @@ public class UserService : IUserService
         var query = _context.Users.AsNoTracking();
         if (scope.DepartmentId.HasValue)
         {
-            query = query.Where(u => u.DepartmentId == scope.DepartmentId.Value);
+            var now = DateTime.UtcNow;
+            var userIdsInDepartment = _context.UserRoles
+                .AsNoTracking()
+                .Where(ur =>
+                    ur.IsActive &&
+                    (ur.ExpiresAt == null || ur.ExpiresAt > now) &&
+                    ur.Role.IsActive &&
+                    ur.Role.DepartmentId == scope.DepartmentId.Value)
+                .Select(ur => ur.UserId);
+
+            query = query.Where(u => userIdsInDepartment.Contains(u.Id));
         }
 
         var totalCount = await query.CountAsync();
@@ -61,7 +71,8 @@ public class UserService : IUserService
             .ToListAsync();
 
         var positions = await UserPositionHelper.ResolveManyAsync(_context, users.Select(u => u.Id).ToList());
-        var items = users.Select(u => MapList(u, positions.GetValueOrDefault(u.Id))).ToList();
+        var departments = await UserPositionHelper.ResolveDepartmentsAsync(_context, users.Select(u => u.Id).ToList());
+        var items = users.Select(u => MapList(u, positions.GetValueOrDefault(u.Id), departments.GetValueOrDefault(u.Id))).ToList();
 
         return PagedResult<UserListDto>.Create(items, totalCount, page, pageSize);
     }
@@ -75,14 +86,16 @@ public class UserService : IUserService
             return null;
         }
 
-        EnsureInScope(user, scope, "Bu kullanıcıyı görüntüleme yetkiniz yok.");
+        await EnsureUserInScopeAsync(user.Id, scope, "Bu kullanıcıyı görüntüleme yetkiniz yok.");
 
-        return MapList(user, await UserPositionHelper.ResolveAsync(_context, user.Id));
+        return await MapListAsync(user);
     }
 
     public async Task<UserListDto> UpdateUserAsync(int actorUserId, int id, UpdateUserRequestDto request)
     {
-        var user = await GetManagedUserAsync(actorUserId, id, "Bu kullanıcıyı güncelleme yetkiniz yok.");
+        var scope = await GetActorScopeAsync(actorUserId);
+        var user = await GetRequiredUserAsync(id);
+        await EnsureUserInScopeAsync(user.Id, scope, "Bu kullanıcıyı güncelleme yetkiniz yok.");
 
         user.FullName = request.FullName.Trim();
         user.Phone = string.IsNullOrWhiteSpace(request.Phone) ? null : request.Phone.Trim();
@@ -94,7 +107,7 @@ public class UserService : IUserService
             AuthActivityType.USER_UPDATED,
             $"Kullanıcı bilgileri güncellendi (işlemi yapan: {actorUserId}).");
 
-        return MapList(user, await UserPositionHelper.ResolveAsync(_context, user.Id));
+        return await MapListAsync(user);
     }
 
     public async Task<UserListDto> SetUserActiveAsync(int actorUserId, int id, SetUserActiveRequestDto request)
@@ -108,7 +121,7 @@ public class UserService : IUserService
 
         if (user.IsActive == request.IsActive)
         {
-            return MapList(user, await UserPositionHelper.ResolveAsync(_context, user.Id));
+            return await MapListAsync(user);
         }
 
         var now = DateTime.UtcNow;
@@ -139,39 +152,50 @@ public class UserService : IUserService
                 ? $"Hesap yeniden aktif edildi (işlemi yapan: {actorUserId})."
                 : $"Hesap pasife alındı (işlemi yapan: {actorUserId}).");
 
-        return MapList(user, await UserPositionHelper.ResolveAsync(_context, user.Id));
+        return await MapListAsync(user);
     }
 
     /// <summary>
-    /// Kapsam: kullanıcının DepartmentId, yoksa atanan rolün DepartmentId.
-    /// İkisi de boşsa (admin) filtresiz.
+    /// Kapsam rol bazlı belirlenir:
+    /// - Aktif rollerinden herhangi biri müdür değilse ve UserRead/UserWrite izni taşıyorsa → Global (admin).
+    /// - Aksi halde aktif bir müdür (IsManager) rolü varsa → o rolün DepartmentId'si.
+    /// - Hiçbiri yoksa → Global (Permission attribute burada zaten erişimi engellemiş olur).
     /// </summary>
     private async Task<ActorScope> GetActorScopeAsync(int actorUserId)
     {
         var now = DateTime.UtcNow;
-        var departmentId = await _context.Users
-            .AsNoTracking()
-            .Where(u => u.Id == actorUserId)
-            .Select(u => u.DepartmentId)
-            .FirstOrDefaultAsync();
 
-        if (!departmentId.HasValue)
+        var activeRoles = await _context.UserRoles
+            .AsNoTracking()
+            .Where(ur =>
+                ur.UserId == actorUserId &&
+                ur.IsActive &&
+                (ur.ExpiresAt == null || ur.ExpiresAt > now) &&
+                ur.Role.IsActive)
+            .Select(ur => new
+            {
+                ur.Role.IsManager,
+                ur.Role.DepartmentId,
+                Permissions = ur.Role.RolePermissions.Select(rp => rp.Permission.Name)
+            })
+            .ToListAsync();
+
+        var hasGlobalAccess = activeRoles.Any(r =>
+            !r.IsManager &&
+            r.Permissions.Any(p => p == "UserRead" || p == "UserWrite"));
+
+        if (hasGlobalAccess)
         {
-            departmentId = await _context.UserRoles
-                .AsNoTracking()
-                .Where(ur =>
-                    ur.UserId == actorUserId &&
-                    ur.IsActive &&
-                    (ur.ExpiresAt == null || ur.ExpiresAt > now) &&
-                    ur.Role.IsActive &&
-                    ur.Role.DepartmentId != null)
-                .Select(ur => ur.Role.DepartmentId)
-                .FirstOrDefaultAsync();
+            return ActorScope.Global();
         }
 
-        return departmentId.HasValue
-            ? ActorScope.Department(departmentId.Value)
-            : ActorScope.Global();
+        var managerRole = activeRoles.FirstOrDefault(r => r.IsManager);
+        if (managerRole?.DepartmentId is int departmentId)
+        {
+            return ActorScope.Department(departmentId);
+        }
+
+        return ActorScope.Global();
     }
 
     private async Task<User> GetManagedUserAsync(
@@ -181,13 +205,31 @@ public class UserService : IUserService
     {
         var scope = await GetActorScopeAsync(actorUserId);
         var user = await GetRequiredUserAsync(targetUserId);
-        EnsureInScope(user, scope, forbiddenMessage);
+        await EnsureUserInScopeAsync(user.Id, scope, forbiddenMessage);
         return user;
     }
 
-    private static void EnsureInScope(User user, ActorScope scope, string forbiddenMessage)
+    /// <summary>
+    /// Hedef kullanıcının departmanı, kendi aktif rollerinin bağlı olduğu departman(lar)dan belirlenir.
+    /// </summary>
+    private async Task EnsureUserInScopeAsync(int targetUserId, ActorScope scope, string forbiddenMessage)
     {
-        if (scope.DepartmentId.HasValue && user.DepartmentId != scope.DepartmentId.Value)
+        if (!scope.DepartmentId.HasValue)
+        {
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+        var isInDepartment = await _context.UserRoles
+            .AsNoTracking()
+            .AnyAsync(ur =>
+                ur.UserId == targetUserId &&
+                ur.IsActive &&
+                (ur.ExpiresAt == null || ur.ExpiresAt > now) &&
+                ur.Role.IsActive &&
+                ur.Role.DepartmentId == scope.DepartmentId.Value);
+
+        if (!isInDepartment)
         {
             throw new ForbiddenException(forbiddenMessage);
         }
@@ -366,6 +408,8 @@ public class UserService : IUserService
             .Select(f => f.FileKind)
             .ToListAsync();
 
+        var department = await UserPositionHelper.ResolveDepartmentAsync(_context, user.Id);
+
         return new UserMeDto
         {
             Id = user.Id,
@@ -373,7 +417,8 @@ public class UserService : IUserService
             Email = user.Email,
             IsActive = user.IsActive,
             IsVerified = user.IsVerified,
-            DepartmentId = user.DepartmentId,
+            DepartmentId = department?.Id,
+            DepartmentName = department?.Name,
             Phone = user.Phone,
             Position = await UserPositionHelper.ResolveAsync(_context, user.Id),
             IsOutOfOffice = user.IsOutOfOffice,
@@ -384,7 +429,15 @@ public class UserService : IUserService
         };
     }
 
-    private static UserListDto MapList(User user, string? position)
+    private async Task<UserListDto> MapListAsync(User user)
+    {
+        return MapList(
+            user,
+            await UserPositionHelper.ResolveAsync(_context, user.Id),
+            await UserPositionHelper.ResolveDepartmentAsync(_context, user.Id));
+    }
+
+    private static UserListDto MapList(User user, string? position, UserDepartmentInfo? department)
     {
         return new UserListDto
         {
@@ -393,7 +446,8 @@ public class UserService : IUserService
             Email = user.Email,
             IsActive = user.IsActive,
             IsVerified = user.IsVerified,
-            DepartmentId = user.DepartmentId,
+            DepartmentId = department?.Id,
+            DepartmentName = department?.Name,
             Phone = user.Phone,
             Position = position,
             CreatedAt = user.CreatedAt

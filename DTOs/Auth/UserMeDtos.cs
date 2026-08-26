@@ -11,6 +11,7 @@ public class UserMeDto
     public bool IsActive { get; set; }
     public bool IsVerified { get; set; }
     public int? DepartmentId { get; set; }
+    public string? DepartmentName { get; set; }
     public string? Phone { get; set; }
     public string? Position { get; set; }
     public bool IsOutOfOffice { get; set; }
@@ -34,7 +35,7 @@ public class UpdateUserRequestDto
     [Required, MaxLength(100)]
     public string FullName { get; set; } = null!;
 
-    [MaxLength(20)]
+            [MaxLength(20)]
     public string? Phone { get; set; }
 }
 

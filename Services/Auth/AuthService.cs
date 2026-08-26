@@ -452,6 +452,7 @@ public class AuthService : IAuthService
 
     private async Task<UserListDto> MapUserAsync(User user)
     {
+        var department = await UserPositionHelper.ResolveDepartmentAsync(_context, user.Id);
         return new UserListDto
         {
             Id = user.Id,
@@ -459,7 +460,8 @@ public class AuthService : IAuthService
             Email = user.Email,
             IsActive = user.IsActive,
             IsVerified = user.IsVerified,
-            DepartmentId = user.DepartmentId,
+            DepartmentId = department?.Id,
+            DepartmentName = department?.Name,
             Phone = user.Phone,
             Position = await UserPositionHelper.ResolveAsync(_context, user.Id),
             CreatedAt = user.CreatedAt

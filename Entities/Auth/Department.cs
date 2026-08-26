@@ -19,5 +19,4 @@ public class Department : IAuditableEntity, ISoftDeletable
     public DateTime? DeletedAt { get; set; }
 
     public ICollection<Role> Roles { get; set; } = new List<Role>();
-    public ICollection<User> Users { get; set; } = new List<User>();
 }

@@ -63,9 +63,11 @@ public class UserDbContext : DbContext
             entity.Property(e => e.FailedLoginCount).HasDefaultValue(0);
             entity.Property(e => e.IsOutOfOffice).HasDefaultValue(false);
 
-            entity.HasOne(e => e.Department)
-                  .WithMany(d => d.Users)
-                  .HasForeignKey(e => e.DepartmentId)
+            // Kolon DB'de durur; entity'de yok. Departman kapsamı roller üzerinden okunur.
+            entity.Property<int?>("DepartmentId");
+            entity.HasOne<Department>()
+                  .WithMany()
+                  .HasForeignKey("DepartmentId")
                   .OnDelete(DeleteBehavior.NoAction);
 
             entity.HasQueryFilter(e => e.DeletedAt == null);

@@ -19,9 +19,6 @@ public class User : IAuditableEntity, ISoftDeletable
     public bool IsActive { get; set; } = true;
     public bool IsVerified { get; set; }
 
-    public int? DepartmentId { get; set; }
-    public Department? Department { get; set; }
-
     [MaxLength(20)]
     public string? Phone { get; set; }
 
