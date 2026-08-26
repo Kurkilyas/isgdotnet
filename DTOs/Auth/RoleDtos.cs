@@ -11,6 +11,7 @@ public class RoleListDto
     public bool IsActive { get; set; }
     public bool IsManager { get; set; }
     public int? DepartmentId { get; set; }
+    public string? DepartmentName { get; set; }
 }
 
 public class UserRoleDto

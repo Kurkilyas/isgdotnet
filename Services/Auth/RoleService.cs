@@ -1,3 +1,4 @@
+using InvoiceTrackingSystemBackend.Common;
 using InvoiceTrackingSystemBackend.Constants;
 using InvoiceTrackingSystemBackend.Data;
 using InvoiceTrackingSystemBackend.DTOs.Auth;
@@ -19,19 +20,65 @@ public class RoleService : IRoleService
         _activityLogService = activityLogService;
     }
 
-    public async Task<IReadOnlyList<RoleListDto>> GetListAsync()
+    public async Task<PagedResult<RoleListDto>> GetListAsync(
+        int page = 1,
+        int pageSize = 10,
+        string? search = null,
+        bool? isActive = null)
     {
-        var roles = await _context.Roles
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 20;
+
+        var query = _context.Roles
             .AsNoTracking()
+            .Include(r => r.Department)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            query = query.Where(r =>
+                r.Name.Contains(term) ||
+                r.DisplayName.Contains(term) ||
+                (r.Department != null && r.Department.Name.Contains(term)));
+        }
+
+        if (isActive.HasValue)
+        {
+            query = query.Where(r => r.IsActive == isActive.Value);
+        }
+
+        var totalCount = await query.CountAsync();
+        var roles = await query
             .OrderBy(r => r.DisplayName)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
 
-        return roles.Select(MapRole).ToList();
+        var items = roles.Select(MapRole).ToList();
+        return PagedResult<RoleListDto>.Create(items, totalCount, page, pageSize);
+    }
+
+    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync()
+    {
+        return await _context.Roles
+            .AsNoTracking()
+            .Where(r => r.IsActive)
+            .OrderBy(r => r.DisplayName)
+            .Select(r => new IdNameDto
+            {
+                Id = r.Id,
+                Name = r.DisplayName
+            })
+            .ToListAsync();
     }
 
     public async Task<RoleListDto> GetByIdAsync(int id)
     {
-        var role = await _context.Roles.AsNoTracking().FirstOrDefaultAsync(r => r.Id == id);
+        var role = await _context.Roles
+            .AsNoTracking()
+            .Include(r => r.Department)
+            .FirstOrDefaultAsync(r => r.Id == id);
         if (role is null)
         {
             throw new NotFoundException("Rol bulunamadı.");
@@ -64,6 +111,7 @@ public class RoleService : IRoleService
             AuthActivityType.ROLE_CREATED,
             $"Rol oluşturuldu: {role.Name}.");
 
+        await AttachDepartmentAsync(role);
         return MapRole(role);
     }
 
@@ -85,6 +133,7 @@ public class RoleService : IRoleService
             AuthActivityType.ROLE_UPDATED,
             $"Rol güncellendi: {role.Name}.");
 
+        await AttachDepartmentAsync(role);
         return MapRole(role);
     }
 
@@ -257,7 +306,9 @@ public class RoleService : IRoleService
 
     private async Task<Role> GetRequiredRoleAsync(int id)
     {
-        var role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == id);
+        var role = await _context.Roles
+            .Include(r => r.Department)
+            .FirstOrDefaultAsync(r => r.Id == id);
         if (role is null)
         {
             throw new NotFoundException("Rol bulunamadı.");
@@ -312,6 +363,24 @@ public class RoleService : IRoleService
         }
     }
 
+    private async Task AttachDepartmentAsync(Role role)
+    {
+        if (!role.DepartmentId.HasValue)
+        {
+            role.Department = null;
+            return;
+        }
+
+        if (role.Department is not null && role.Department.Id == role.DepartmentId.Value)
+        {
+            return;
+        }
+
+        role.Department = await _context.Departments
+            .AsNoTracking()
+            .FirstOrDefaultAsync(d => d.Id == role.DepartmentId.Value);
+    }
+
     private static RoleListDto MapRole(Role role)
     {
         return new RoleListDto
@@ -322,7 +391,8 @@ public class RoleService : IRoleService
             Description = role.Description,
             IsActive = role.IsActive,
             IsManager = role.IsManager,
-            DepartmentId = role.DepartmentId
+            DepartmentId = role.DepartmentId,
+            DepartmentName = role.Department?.Name
         };
     }
 }

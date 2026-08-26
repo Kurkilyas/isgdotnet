@@ -13,13 +13,13 @@ namespace InvoiceTrackingSystemBackend.Controllers.Auth;
 [Route("api/[controller]")]
 [Authorize]
 [EnableRateLimiting("GlobalLimit")]
-public class RolesController : ControllerBase
+public class PermissionsController : ControllerBase
 {
-    private readonly IRoleService _roleService;
+    private readonly IPermissionService _permissionService;
 
-    public RolesController(IRoleService roleService)
+    public PermissionsController(IPermissionService permissionService)
     {
-        _roleService = roleService;
+        _permissionService = permissionService;
     }
 
     [HttpGet]
@@ -30,70 +30,71 @@ public class RolesController : ControllerBase
         [FromQuery] string? search = null,
         [FromQuery] bool? isActive = null)
     {
-        var result = await _roleService.GetListAsync(page, pageSize, search, isActive);
+        var result = await _permissionService.GetListAsync(page, pageSize, search, isActive);
         return Ok(result);
     }
 
     [HttpGet("all")]
+    [Permission("AdminRead")]
     public async Task<IActionResult> GetAll()
     {
-        var result = await _roleService.GetAllAsync();
+        var result = await _permissionService.GetAllAsync();
         return Ok(result);
     }
 
-    [HttpGet("users/{userId:int}")]
+    [HttpGet("roles/{roleId:int}")]
     [Permission("AdminRead")]
-    public async Task<IActionResult> GetUserRoles(int userId)
+    public async Task<IActionResult> GetRolePermissions(int roleId)
     {
-        var result = await _roleService.GetUserRolesAsync(userId);
+        var result = await _permissionService.GetRolePermissionsAsync(roleId);
         return Ok(result);
     }
 
-    [HttpPost("users/{userId:int}")]
+    [HttpPost("roles/{roleId:int}")]
     [Permission("AdminWrite")]
-    public async Task<IActionResult> AssignToUser(int userId, [FromBody] AssignRoleRequestDto request)
+    public async Task<IActionResult> AssignToRole(int roleId, [FromBody] AssignPermissionRequestDto request)
     {
-        var result = await _roleService.AssignToUserAsync(GetCurrentUserId(), userId, request);
+        var result = await _permissionService.AssignToRoleAsync(GetCurrentUserId(), roleId, request);
         return Ok(result);
     }
 
-    [HttpDelete("users/{userId:int}/{roleId:int}")]
+    [HttpDelete("roles/{roleId:int}/{permissionId:int}")]
     [Permission("AdminWrite")]
-    public async Task<IActionResult> RevokeFromUser(int userId, int roleId)
+    public async Task<IActionResult> RevokeFromRole(int roleId, int permissionId)
     {
-        await _roleService.RevokeFromUserAsync(GetCurrentUserId(), userId, roleId);
-        return Ok(new { message = "Rol kullanıcıdan alındı." });
+        await _permissionService.RevokeFromRoleAsync(GetCurrentUserId(), roleId, permissionId);
+        return Ok(new { message = "İzin rolden alındı." });
     }
 
     [HttpGet("{id:int}")]
     [Permission("AdminRead")]
     public async Task<IActionResult> GetById(int id)
     {
-        var result = await _roleService.GetByIdAsync(id);
+        var result = await _permissionService.GetByIdAsync(id);
         return Ok(result);
     }
 
     [HttpPost]
     [Permission("AdminWrite")]
-    public async Task<IActionResult> Create([FromBody] CreateRoleRequestDto request)
+    public async Task<IActionResult> Create([FromBody] CreatePermissionRequestDto request)
     {
-        var result = await _roleService.CreateAsync(GetCurrentUserId(), request);
+        var result = await _permissionService.CreateAsync(GetCurrentUserId(), request);
         return Ok(result);
     }
 
     [HttpPut("{id:int}")]
     [Permission("AdminWrite")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateRoleRequestDto request)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdatePermissionRequestDto request)
     {
-        var result = await _roleService.UpdateAsync(GetCurrentUserId(), id, request);
+        var result = await _permissionService.UpdateAsync(GetCurrentUserId(), id, request);
         return Ok(result);
     }
 
     [HttpPut("{id:int}/status")]
     [Permission("AdminWrite")]
-    public async Task<IActionResult> SetActive(int id, [FromBody] SetRoleActiveRequestDto request)
+    public async Task<IActionResult> SetActive(int id, [FromBody] SetPermissionActiveRequestDto request)
     {
-        var result = await _roleService.SetActiveAsync(GetCurrentUserId(), id, request);
+        var result = await _permissionService.SetActiveAsync(GetCurrentUserId(), id, request);
         return Ok(result);
     }
 
@@ -101,8 +102,8 @@ public class RolesController : ControllerBase
     [Permission("AdminWrite")]
     public async Task<IActionResult> Delete(int id)
     {
-        await _roleService.DeleteAsync(GetCurrentUserId(), id);
-        return Ok(new { message = "Rol silindi." });
+        await _permissionService.DeleteAsync(GetCurrentUserId(), id);
+        return Ok(new { message = "İzin silindi." });
     }
 
     private int GetCurrentUserId()
