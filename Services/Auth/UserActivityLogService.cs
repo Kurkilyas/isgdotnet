@@ -3,6 +3,7 @@ using InvoiceTrackingSystemBackend.Constants;
 using InvoiceTrackingSystemBackend.Data;
 using InvoiceTrackingSystemBackend.DTOs.Auth;
 using InvoiceTrackingSystemBackend.Entities.Auth;
+using InvoiceTrackingSystemBackend.Helpers;
 using InvoiceTrackingSystemBackend.Interfaces.Auth;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,7 +29,7 @@ public class UserActivityLogService : IUserActivityLogService
             UserId = userId,
             ActivityType = activityType,
             Description = description,
-            IpAddress = http?.Connection.RemoteIpAddress?.ToString(),
+            IpAddress = ClientIpHelper.Resolve(http),
             UserAgent = http?.Request.Headers.UserAgent.ToString(),
             CreatedAt = DateTime.UtcNow
         });

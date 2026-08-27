@@ -99,6 +99,8 @@ public class UserService : IUserService
 
         user.FullName = request.FullName.Trim();
         user.Phone = string.IsNullOrWhiteSpace(request.Phone) ? null : request.Phone.Trim();
+        user.IsOutOfOffice = request.IsOutOfOffice;
+        user.OutOfOfficeUntil = request.IsOutOfOffice ? request.OutOfOfficeUntil : null;
 
         user.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
@@ -450,6 +452,8 @@ public class UserService : IUserService
             DepartmentName = department?.Name,
             Phone = user.Phone,
             Position = position,
+            IsOutOfOffice = user.IsOutOfOffice,
+            OutOfOfficeUntil = user.OutOfOfficeUntil,
             CreatedAt = user.CreatedAt
         };
     }

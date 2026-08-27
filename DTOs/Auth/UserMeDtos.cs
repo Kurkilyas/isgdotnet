@@ -35,8 +35,13 @@ public class UpdateUserRequestDto
     [Required, MaxLength(100)]
     public string FullName { get; set; } = null!;
 
-            [MaxLength(20)]
+    [MaxLength(20)]
     public string? Phone { get; set; }
+
+    [Required]
+    public bool IsOutOfOffice { get; set; }
+
+    public DateTime? OutOfOfficeUntil { get; set; }
 }
 
 public class SetUserActiveRequestDto

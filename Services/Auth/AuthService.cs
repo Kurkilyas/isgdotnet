@@ -464,6 +464,8 @@ public class AuthService : IAuthService
             DepartmentName = department?.Name,
             Phone = user.Phone,
             Position = await UserPositionHelper.ResolveAsync(_context, user.Id),
+            IsOutOfOffice = user.IsOutOfOffice,
+            OutOfOfficeUntil = user.OutOfOfficeUntil,
             CreatedAt = user.CreatedAt
         };
     }

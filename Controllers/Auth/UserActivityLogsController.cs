@@ -1,3 +1,4 @@
+using InvoiceTrackingSystemBackend.Attributes;
 using InvoiceTrackingSystemBackend.Constants;
 using InvoiceTrackingSystemBackend.Interfaces.Auth;
 using Microsoft.AspNetCore.Authorization;
@@ -20,6 +21,7 @@ public class UserActivityLogsController : ControllerBase
     }
 
     [HttpGet]
+    [Permission("AdminRead")]
     public async Task<IActionResult> GetList(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
@@ -31,6 +33,7 @@ public class UserActivityLogsController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [Permission("AdminRead")]
     public async Task<IActionResult> GetById(int id)
     {
         var result = await _service.GetByIdAsync(id);

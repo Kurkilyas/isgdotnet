@@ -11,5 +11,7 @@ public class UserListDto
     public string? DepartmentName { get; set; }
     public string? Phone { get; set; }
     public string? Position { get; set; }
+    public bool IsOutOfOffice { get; set; }
+    public DateTime? OutOfOfficeUntil { get; set; }
     public DateTime? CreatedAt { get; set; }
 }

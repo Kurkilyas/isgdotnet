@@ -14,6 +14,7 @@ using InvoiceTrackingSystemBackend.Services.Vega;
 using InvoiceTrackingSystemBackend.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
@@ -155,6 +156,8 @@ builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<IStorageService, StorageService>();
 builder.Services.AddScoped<ITblCariService, TblCariService>();
 builder.Services.AddScoped<ITblMuhCariHesapKodlariService, TblMuhCariHesapKodlariService>();
+
+
 
 var app = builder.Build();
 
