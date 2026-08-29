@@ -6,10 +6,12 @@ using InvoiceTrackingSystemBackend.Data;
 using InvoiceTrackingSystemBackend.Helpers;
 using InvoiceTrackingSystemBackend.Interfaces;
 using InvoiceTrackingSystemBackend.Interfaces.Auth;
+using InvoiceTrackingSystemBackend.Interfaces.Invoice;
 using InvoiceTrackingSystemBackend.Interfaces.Vega;
 using InvoiceTrackingSystemBackend.Middleware;
 using InvoiceTrackingSystemBackend.Services;
 using InvoiceTrackingSystemBackend.Services.Auth;
+using InvoiceTrackingSystemBackend.Services.Invoice;
 using InvoiceTrackingSystemBackend.Services.Vega;
 using InvoiceTrackingSystemBackend.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -156,6 +158,13 @@ builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<IStorageService, StorageService>();
 builder.Services.AddScoped<ITblCariService, TblCariService>();
 builder.Services.AddScoped<ITblMuhCariHesapKodlariService, TblMuhCariHesapKodlariService>();
+builder.Services.AddScoped<AuthReferenceLookup>();
+builder.Services.AddScoped<IInvoiceTypeService, InvoiceTypeService>();
+builder.Services.AddScoped<IInvoiceTypeStepService, InvoiceTypeStepService>();
+builder.Services.AddScoped<IInvoiceTypeStepApproverService, InvoiceTypeStepApproverService>();
+builder.Services.AddScoped<ISupplierCategoryService, SupplierCategoryService>();
+builder.Services.AddScoped<ISupplierService, SupplierService>();
+builder.Services.AddScoped<IInvoiceActivityLogService, InvoiceActivityLogService>();
 
 
 

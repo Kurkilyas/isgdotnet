@@ -20,7 +20,7 @@ public class InvoiceActivityLog
     /// <summary>SoftFK -> Auth DB users.Id, cross-database, EF Core navigation yok.</summary>
     public int? UserId { get; set; }
 
-    public ActivityType ActivityType { get; set; }
+    public InvoiceActivityType ActivityType { get; set; }
 
     [MaxLength(500)]
     public string? Description { get; set; }
