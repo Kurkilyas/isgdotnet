@@ -52,13 +52,19 @@ public class InvoiceActivityLogService : IInvoiceActivityLogService
             }
         }
 
+        var trimmedDescription = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
+        if (trimmedDescription is { Length: > 500 })
+        {
+            throw new BadRequestException("Açıklama en fazla 500 karakter olabilir.");
+        }
+
         _invoiceDb.InvoiceActivityLogs.Add(new InvoiceActivityLog
         {
             InvoiceId = invoiceId,
             WorkflowStepId = workflowStepId,
             UserId = userId,
             ActivityType = activityType,
-            Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim(),
+            Description = trimmedDescription,
             IpAddress = ClientIpHelper.Resolve(_httpContextAccessor.HttpContext),
             CreatedAt = DateTime.UtcNow
         });
