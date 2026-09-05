@@ -2,6 +2,7 @@ using InvoiceTrackingSystemBackend.Data;
 using InvoiceTrackingSystemBackend.DTOs.Invoice;
 using InvoiceTrackingSystemBackend.Entities.Invoice;
 using InvoiceTrackingSystemBackend.Exceptions;
+using InvoiceTrackingSystemBackend.Helpers;
 using InvoiceTrackingSystemBackend.Interfaces.Invoice;
 using Microsoft.EntityFrameworkCore;
 
@@ -55,7 +56,14 @@ public class InvoiceTypeStepApproverService : IInvoiceTypeStepApproverService
                 a.InvoiceTypeStepId == invoiceTypeStepId &&
                 a.UserId == request.UserId);
 
-        await EnsurePriorityAvailableAsync(invoiceTypeStepId, request.Priority, excludeId: existing?.Id);
+        var existingOrders = await _invoiceDb.InvoiceTypeStepApprovers
+            .Where(a =>
+                a.InvoiceTypeStepId == invoiceTypeStepId &&
+                a.IsActive &&
+                (existing == null || a.Id != existing.Id))
+            .Select(a => a.Priority)
+            .ToListAsync();
+        var priority = SequentialOrderHelper.NextAppendOrder(existingOrders, request.Priority);
 
         var now = DateTime.UtcNow;
         InvoiceTypeStepApprover approver;
@@ -68,7 +76,7 @@ public class InvoiceTypeStepApproverService : IInvoiceTypeStepApproverService
 
             existing.DeletedAt = null;
             existing.IsActive = true;
-            existing.Priority = request.Priority;
+            existing.Priority = priority;
             existing.UpdatedAt = now;
             existing.CreatedAt ??= now;
             approver = existing;
@@ -79,7 +87,7 @@ public class InvoiceTypeStepApproverService : IInvoiceTypeStepApproverService
             {
                 InvoiceTypeStepId = invoiceTypeStepId,
                 UserId = request.UserId,
-                Priority = request.Priority,
+                Priority = priority,
                 IsActive = true,
                 CreatedAt = now
             };
@@ -93,11 +101,26 @@ public class InvoiceTypeStepApproverService : IInvoiceTypeStepApproverService
     public async Task<InvoiceTypeStepApproverResponseDto> UpdateAsync(int id, UpdateInvoiceTypeStepApproverRequestDto request)
     {
         var approver = await GetRequiredApproverAsync(id);
-        await EnsurePriorityAvailableAsync(approver.InvoiceTypeStepId, request.Priority, excludeId: id);
+        var siblings = await _invoiceDb.InvoiceTypeStepApprovers
+            .Where(a => a.InvoiceTypeStepId == approver.InvoiceTypeStepId && a.IsActive)
+            .ToListAsync();
 
-        approver.Priority = request.Priority;
-        approver.UpdatedAt = DateTime.UtcNow;
-        await _invoiceDb.SaveChangesAsync();
+        if (approver.IsActive)
+        {
+            var now = DateTime.UtcNow;
+            await SequentialOrderHelper.MoveAsync(
+                siblings,
+                approver,
+                request.Priority,
+                a => a.Priority,
+                (a, order) =>
+                {
+                    a.Priority = order;
+                    a.UpdatedAt = now;
+                },
+                a => a.Id,
+                () => _invoiceDb.SaveChangesAsync());
+        }
 
         return await MapOneAsync(approver);
     }
@@ -110,9 +133,38 @@ public class InvoiceTypeStepApproverService : IInvoiceTypeStepApproverService
             return await MapOneAsync(approver);
         }
 
+        var now = DateTime.UtcNow;
         approver.IsActive = request.IsActive;
-        approver.UpdatedAt = DateTime.UtcNow;
-        await _invoiceDb.SaveChangesAsync();
+        approver.UpdatedAt = now;
+
+        if (!request.IsActive)
+        {
+            approver.Priority = -approver.Id;
+            await _invoiceDb.SaveChangesAsync();
+
+            var remaining = await _invoiceDb.InvoiceTypeStepApprovers
+                .Where(a => a.InvoiceTypeStepId == approver.InvoiceTypeStepId && a.IsActive)
+                .ToListAsync();
+            await SequentialOrderHelper.CompactAsync(
+                remaining,
+                a => a.Priority,
+                (a, order) =>
+                {
+                    a.Priority = order;
+                    a.UpdatedAt = now;
+                },
+                a => a.Id,
+                () => _invoiceDb.SaveChangesAsync());
+        }
+        else
+        {
+            var existingOrders = await _invoiceDb.InvoiceTypeStepApprovers
+                .Where(a => a.InvoiceTypeStepId == approver.InvoiceTypeStepId && a.IsActive && a.Id != approver.Id)
+                .Select(a => a.Priority)
+                .ToListAsync();
+            approver.Priority = SequentialOrderHelper.NextAppendOrder(existingOrders, 0);
+            await _invoiceDb.SaveChangesAsync();
+        }
 
         return await MapOneAsync(approver);
     }
@@ -120,11 +172,27 @@ public class InvoiceTypeStepApproverService : IInvoiceTypeStepApproverService
     public async Task DeleteAsync(int id)
     {
         var approver = await GetRequiredApproverAsync(id);
+        var stepId = approver.InvoiceTypeStepId;
         var now = DateTime.UtcNow;
         approver.IsActive = false;
         approver.DeletedAt = now;
         approver.UpdatedAt = now;
+        approver.Priority = -approver.Id;
         await _invoiceDb.SaveChangesAsync();
+
+        var remaining = await _invoiceDb.InvoiceTypeStepApprovers
+            .Where(a => a.InvoiceTypeStepId == stepId && a.IsActive)
+            .ToListAsync();
+        await SequentialOrderHelper.CompactAsync(
+            remaining,
+            a => a.Priority,
+            (a, order) =>
+            {
+                a.Priority = order;
+                a.UpdatedAt = now;
+            },
+            a => a.Id,
+            () => _invoiceDb.SaveChangesAsync());
     }
 
     private async Task<InvoiceTypeStep> GetRequiredStepAsync(int invoiceTypeStepId)
@@ -147,18 +215,6 @@ public class InvoiceTypeStepApproverService : IInvoiceTypeStepApproverService
         }
 
         return approver;
-    }
-
-    private async Task EnsurePriorityAvailableAsync(int invoiceTypeStepId, int priority, int? excludeId)
-    {
-        var exists = await _invoiceDb.InvoiceTypeStepApprovers.AnyAsync(a =>
-            a.InvoiceTypeStepId == invoiceTypeStepId &&
-            a.Priority == priority &&
-            (!excludeId.HasValue || a.Id != excludeId.Value));
-        if (exists)
-        {
-            throw new ConflictException("Bu öncelik numarası bu adımda zaten kullanılıyor.");
-        }
     }
 
     private async Task<InvoiceTypeStepApproverResponseDto> MapOneAsync(InvoiceTypeStepApprover approver)
