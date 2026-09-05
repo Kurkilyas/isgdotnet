@@ -13,14 +13,12 @@ public class InvoiceRelationResponseDto
     public InvoiceRelationType RelationType { get; set; }
     public string? Note { get; set; }
     public int? CreatedByUserId { get; set; }
+    public string? CreatedByUserFullName { get; set; }
     public DateTime CreatedAt { get; set; }
 }
 
 public class CreateInvoiceRelationRequestDto
 {
-    [Required]
-    public int InvoiceId { get; set; }
-
     [Required]
     public int RelatedInvoiceId { get; set; }
 

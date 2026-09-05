@@ -15,4 +15,20 @@ public static class CurrentUserHelper
 
         return userId;
     }
+
+    public static HashSet<string> GetPermissions(ClaimsPrincipal user)
+    {
+        var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var claim in user.Claims.Where(c => c.Type is "Permission" or "Permissions"))
+        {
+            var parts = claim.Value.Split([",", ", "], StringSplitOptions.RemoveEmptyEntries);
+            foreach (var part in parts)
+            {
+                result.Add(part.Trim());
+            }
+        }
+
+        return result;
+    }
 }

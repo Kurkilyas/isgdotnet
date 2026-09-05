@@ -52,8 +52,11 @@ public class InvoiceDetailDto
     public string? PredictionModelVersion { get; set; }
     public AssignmentMethod? AssignmentMethod { get; set; }
     public int? AssignedUserId { get; set; }
+    public string? AssignedUserFullName { get; set; }
     public int? Auditor1UserId { get; set; }
+    public string? Auditor1UserFullName { get; set; }
     public int? Auditor2UserId { get; set; }
+    public string? Auditor2UserFullName { get; set; }
     public InvoiceStatus CurrentStatus { get; set; }
     public DateTime? CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
@@ -90,14 +93,13 @@ public class CreateInvoiceRequestDto
 
     public string? RawPayloadJson { get; set; }
 
+    public int? InvoiceTypeId { get; set; }
+
     public List<CreateInvoiceLineItemRequestDto> LineItems { get; set; } = new();
 }
 
 public class UpdateInvoiceRequestDto
 {
-    [Required]
-    public int Id { get; set; }
-
     public int? SupplierId { get; set; }
 
     public int? InvoiceTypeId { get; set; }
@@ -107,6 +109,9 @@ public class UpdateInvoiceRequestDto
     public int? AssignedUserId { get; set; }
     public int? Auditor1UserId { get; set; }
     public int? Auditor2UserId { get; set; }
+
+    [MaxLength(50)]
+    public string? CurrentAccountCode { get; set; }
 
     [MaxLength(500)]
     public string? ErrorReason { get; set; }

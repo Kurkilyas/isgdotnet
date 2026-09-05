@@ -10,7 +10,9 @@ public class InvoiceWorkflowStepResponseDto
     public int StepOrder { get; set; }
     public string StepName { get; set; } = null!;
     public int? AssignedUserId { get; set; }
+    public string? AssignedUserFullName { get; set; }
     public int? AssignedDepartmentId { get; set; }
+    public string? AssignedDepartmentName { get; set; }
     public DateTime StartedAt { get; set; }
     public DateTime? DueAt { get; set; }
     public DateTime? CompletedAt { get; set; }

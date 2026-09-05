@@ -12,6 +12,7 @@ public class InvoiceAttachmentResponseDto
     public int? FileSizeBytes { get; set; }
     public string? ChecksumSha256 { get; set; }
     public int? UploadedByUserId { get; set; }
+    public string? UploadedByUserFullName { get; set; }
     public DateTime UploadedAt { get; set; }
 }
 
