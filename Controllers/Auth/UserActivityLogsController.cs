@@ -32,6 +32,14 @@ public class UserActivityLogsController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("all")]
+    [Permission("AdminRead")]
+    public async Task<IActionResult> GetAll()
+    {
+        var result = await _service.GetAllAsync();
+        return Ok(result);
+    }
+
     [HttpGet("{id:int}")]
     [Permission("AdminRead")]
     public async Task<IActionResult> GetById(int id)

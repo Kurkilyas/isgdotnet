@@ -1,6 +1,7 @@
 using InvoiceTrackingSystemBackend.Common;
 using InvoiceTrackingSystemBackend.Constants;
 using InvoiceTrackingSystemBackend.Data;
+using InvoiceTrackingSystemBackend.DTOs.Auth;
 using InvoiceTrackingSystemBackend.DTOs.Invoice;
 using InvoiceTrackingSystemBackend.Entities.Invoice;
 using InvoiceTrackingSystemBackend.Exceptions;
@@ -115,6 +116,23 @@ public class InvoiceActivityLogService : IInvoiceActivityLogService
 
         var items = await MapManyAsync(entities);
         return PagedResult<InvoiceActivityLogResponseDto>.Create(items, totalCount, page, pageSize);
+    }
+
+    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync()
+    {
+        var rows = await _invoiceDb.InvoiceActivityLogs
+            .AsNoTracking()
+            .OrderByDescending(e => e.CreatedAt)
+            .Select(e => new { e.Id, e.Description, e.ActivityType, e.InvoiceId })
+            .ToListAsync();
+
+        return rows.Select(e => new IdNameDto
+        {
+            Id = e.Id,
+            Name = string.IsNullOrWhiteSpace(e.Description)
+                ? $"{e.ActivityType} #{e.InvoiceId}"
+                : e.Description
+        }).ToList();
     }
 
     public async Task<InvoiceActivityLogResponseDto?> GetByIdAsync(int id)

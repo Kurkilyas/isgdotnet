@@ -61,11 +61,15 @@ public class InvoiceTypeService : IInvoiceTypeService
         return PagedResult<InvoiceTypeListDto>.Create(items, totalCount, page, pageSize);
     }
 
-    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync()
+    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync(bool? isActive = null)
     {
-        return await _invoiceDb.InvoiceTypes
-            .AsNoTracking()
-            .Where(t => t.IsActive)
+        var query = _invoiceDb.InvoiceTypes.AsNoTracking();
+        if (isActive.HasValue)
+        {
+            query = query.Where(t => t.IsActive == isActive.Value);
+        }
+
+        return await query
             .OrderBy(t => t.Name)
             .Select(t => new IdNameDto
             {

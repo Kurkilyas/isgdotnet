@@ -1,5 +1,6 @@
 using InvoiceTrackingSystemBackend.Common;
 using InvoiceTrackingSystemBackend.Data;
+using InvoiceTrackingSystemBackend.DTOs.Auth;
 using InvoiceTrackingSystemBackend.DTOs.Vega;
 using InvoiceTrackingSystemBackend.Exceptions;
 using InvoiceTrackingSystemBackend.Interfaces.Vega;
@@ -45,6 +46,26 @@ public class TblMuhCariHesapKodlariService : ITblMuhCariHesapKodlariService
                 .ToListAsync();
 
             return PagedResult<TblMuhCariHesapKodlariDto>.Create(items, totalCount, page, pageSize);
+        }
+        catch (SqlException ex)
+        {
+            throw new ExternalServiceException("Vega (ERP) veritabanına şu anda ulaşılamıyor.", ex);
+        }
+    }
+
+    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync()
+    {
+        try
+        {
+            return await _context.TblMuhCariHesapKodlaris
+                .AsNoTracking()
+                .OrderBy(e => e.Ind)
+                .Select(e => new IdNameDto
+                {
+                    Id = e.Ind,
+                    Name = e.GiderCesitKodu ?? e.FirmaNo.ToString() ?? e.Ind.ToString()
+                })
+                .ToListAsync();
         }
         catch (SqlException ex)
         {

@@ -24,6 +24,14 @@ public class InvoiceTypeStepsController : ControllerBase
         _approverService = approverService;
     }
 
+    [HttpGet("all")]
+    [Permission("AdminRead")]
+    public async Task<IActionResult> GetAll([FromQuery] bool? isActive = null)
+    {
+        var result = await _invoiceTypeStepService.GetAllAsync(isActive);
+        return Ok(result);
+    }
+
     [HttpGet("{id:int}")]
     [Permission("AdminRead")]
     public async Task<IActionResult> GetById(int id)

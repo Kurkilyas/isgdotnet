@@ -25,6 +25,13 @@ public class TblMuhCariHesapKodlariController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("all")]
+    public async Task<IActionResult> GetAll()
+    {
+        var result = await _service.GetAllAsync();
+        return Ok(result);
+    }
+
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {

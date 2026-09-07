@@ -1,5 +1,6 @@
 using InvoiceTrackingSystemBackend.Common;
 using InvoiceTrackingSystemBackend.Data;
+using InvoiceTrackingSystemBackend.DTOs.Auth;
 using InvoiceTrackingSystemBackend.DTOs.Vega;
 using InvoiceTrackingSystemBackend.Exceptions;
 using InvoiceTrackingSystemBackend.Interfaces.Vega;
@@ -42,6 +43,34 @@ public class TblCariService : ITblCariService
                 .ToListAsync();
 
             return PagedResult<TblCariListDto>.Create(items, totalCount, page, pageSize);
+        }
+        catch (SqlException ex)
+        {
+            throw new ExternalServiceException("Vega (ERP) veritabanına şu anda ulaşılamıyor.", ex);
+        }
+    }
+
+    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync(bool? isActive = null)
+    {
+        try
+        {
+            var query = _context.TblCaris.AsNoTracking();
+            if (isActive.HasValue)
+            {
+                query = isActive.Value
+                    ? query.Where(e => e.Deleted != true)
+                    : query.Where(e => e.Deleted == true);
+            }
+
+            return await query
+                .OrderBy(e => e.FirmaAdi)
+                .ThenBy(e => e.Ind)
+                .Select(e => new IdNameDto
+                {
+                    Id = e.Ind,
+                    Name = e.FirmaAdi ?? e.Unvan ?? e.FirmaKodu ?? e.Ind.ToString()
+                })
+                .ToListAsync();
         }
         catch (SqlException ex)
         {

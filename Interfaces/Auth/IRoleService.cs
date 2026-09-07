@@ -6,7 +6,7 @@ namespace InvoiceTrackingSystemBackend.Interfaces.Auth;
 public interface IRoleService
 {
     Task<PagedResult<RoleListDto>> GetListAsync(int page = 1, int pageSize = 10, string? search = null, bool? isActive = null);
-    Task<IReadOnlyList<IdNameDto>> GetAllAsync();
+    Task<IReadOnlyList<IdNameDto>> GetAllAsync(bool? isActive = null);
     Task<RoleListDto> GetByIdAsync(int id);
     Task<RoleListDto> CreateAsync(int actorUserId, CreateRoleRequestDto request);
     Task<RoleListDto> UpdateAsync(int actorUserId, int id, UpdateRoleRequestDto request);

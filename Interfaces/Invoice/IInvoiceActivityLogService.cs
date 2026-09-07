@@ -1,5 +1,6 @@
 using InvoiceTrackingSystemBackend.Common;
 using InvoiceTrackingSystemBackend.Constants;
+using InvoiceTrackingSystemBackend.DTOs.Auth;
 using InvoiceTrackingSystemBackend.DTOs.Invoice;
 
 namespace InvoiceTrackingSystemBackend.Interfaces.Invoice;
@@ -14,5 +15,6 @@ public interface IInvoiceActivityLogService
         int? userId = null,
         InvoiceActivityType? activityType = null,
         string? description = null);
+    Task<IReadOnlyList<IdNameDto>> GetAllAsync();
     Task<InvoiceActivityLogResponseDto?> GetByIdAsync(int id);
 }

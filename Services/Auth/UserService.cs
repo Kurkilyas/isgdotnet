@@ -77,6 +77,24 @@ public class UserService : IUserService
         return PagedResult<UserListDto>.Create(items, totalCount, page, pageSize);
     }
 
+    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync(bool? isActive = null)
+    {
+        var query = _context.Users.AsNoTracking();
+        if (isActive.HasValue)
+        {
+            query = query.Where(u => u.IsActive == isActive.Value);
+        }
+
+        return await query
+            .OrderBy(u => u.FullName)
+            .Select(u => new IdNameDto
+            {
+                Id = u.Id,
+                Name = u.FullName
+            })
+            .ToListAsync();
+    }
+
     public async Task<UserListDto?> GetByIdAsync(int actorUserId, int id)
     {
         var scope = await GetActorScopeAsync(actorUserId);

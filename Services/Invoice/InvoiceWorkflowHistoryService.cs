@@ -1,6 +1,7 @@
 using InvoiceTrackingSystemBackend.Common;
 using InvoiceTrackingSystemBackend.Constants;
 using InvoiceTrackingSystemBackend.Data;
+using InvoiceTrackingSystemBackend.DTOs.Auth;
 using InvoiceTrackingSystemBackend.DTOs.Invoice;
 using InvoiceTrackingSystemBackend.Entities.Invoice;
 using InvoiceTrackingSystemBackend.Exceptions;
@@ -115,6 +116,37 @@ public class InvoiceWorkflowHistoryService : IInvoiceWorkflowHistoryService
 
         var items = await MapManyAsync(entities);
         return PagedResult<InvoiceWorkflowHistoryResponseDto>.Create(items, totalCount, page, pageSize);
+    }
+
+    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync()
+    {
+        var access = await _access.ResolveAsync();
+        if (!access.CanAccessAll && access.InvoiceTypeIds.Count == 0)
+        {
+            return [];
+        }
+
+        var query = _invoiceDb.InvoiceWorkflowHistories.AsNoTracking();
+        if (!access.CanAccessAll)
+        {
+            var typeIds = access.InvoiceTypeIds.ToList();
+            query = query.Where(e =>
+                e.Invoice.InvoiceTypeId != null &&
+                typeIds.Contains(e.Invoice.InvoiceTypeId.Value));
+        }
+
+        var rows = await query
+            .OrderByDescending(e => e.CreatedAt)
+            .Select(e => new { e.Id, e.Reason, e.ActionType, e.InvoiceId })
+            .ToListAsync();
+
+        return rows.Select(e => new IdNameDto
+        {
+            Id = e.Id,
+            Name = string.IsNullOrWhiteSpace(e.Reason)
+                ? $"{e.ActionType} #{e.InvoiceId}"
+                : e.Reason
+        }).ToList();
     }
 
     public async Task<InvoiceWorkflowHistoryResponseDto?> GetByIdAsync(int id)

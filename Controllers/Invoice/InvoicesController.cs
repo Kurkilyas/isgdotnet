@@ -40,6 +40,14 @@ public class InvoicesController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("all")]
+    [Permission("InvoiceRead")]
+    public async Task<IActionResult> GetAll()
+    {
+        var result = await _invoiceService.GetAllAsync();
+        return Ok(result);
+    }
+
     [HttpGet("{id:int}")]
     [Permission("InvoiceRead")]
     public async Task<IActionResult> GetById(int id)

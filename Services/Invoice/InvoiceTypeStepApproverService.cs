@@ -1,4 +1,5 @@
 using InvoiceTrackingSystemBackend.Data;
+using InvoiceTrackingSystemBackend.DTOs.Auth;
 using InvoiceTrackingSystemBackend.DTOs.Invoice;
 using InvoiceTrackingSystemBackend.Entities.Invoice;
 using InvoiceTrackingSystemBackend.Exceptions;
@@ -17,6 +18,28 @@ public class InvoiceTypeStepApproverService : IInvoiceTypeStepApproverService
     {
         _invoiceDb = invoiceDb;
         _authLookup = authLookup;
+    }
+
+    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync(bool? isActive = null)
+    {
+        var query = _invoiceDb.InvoiceTypeStepApprovers.AsNoTracking();
+        if (isActive.HasValue)
+        {
+            query = query.Where(a => a.IsActive == isActive.Value);
+        }
+
+        var rows = await query
+            .OrderBy(a => a.InvoiceTypeStepId)
+            .ThenBy(a => a.Priority)
+            .Select(a => new { a.Id, a.UserId })
+            .ToListAsync();
+
+        var userNames = await _authLookup.GetUserFullNamesAsync(rows.Select(r => r.UserId));
+        return rows.Select(r => new IdNameDto
+        {
+            Id = r.Id,
+            Name = userNames.GetValueOrDefault(r.UserId) ?? $"#{r.UserId}"
+        }).ToList();
     }
 
     public async Task<IReadOnlyList<InvoiceTypeStepApproverResponseDto>> GetByStepIdAsync(int invoiceTypeStepId)

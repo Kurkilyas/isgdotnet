@@ -1,6 +1,7 @@
 using InvoiceTrackingSystemBackend.Common;
 using InvoiceTrackingSystemBackend.Constants;
 using InvoiceTrackingSystemBackend.Data;
+using InvoiceTrackingSystemBackend.DTOs.Auth;
 using InvoiceTrackingSystemBackend.DTOs.Invoice;
 using InvoiceTrackingSystemBackend.Entities.Invoice;
 using InvoiceTrackingSystemBackend.Exceptions;
@@ -119,6 +120,31 @@ public class InvoiceService : IInvoiceService
         }).ToList();
 
         return PagedResult<InvoiceListItemDto>.Create(items, totalCount, page, pageSize);
+    }
+
+    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync()
+    {
+        var access = await _access.ResolveAsync();
+        if (!access.CanAccessAll && access.InvoiceTypeIds.Count == 0)
+        {
+            return [];
+        }
+
+        var query = _invoiceDb.Invoices.AsNoTracking().AsQueryable();
+        if (!access.CanAccessAll)
+        {
+            var typeIds = access.InvoiceTypeIds.ToList();
+            query = query.Where(i => i.InvoiceTypeId != null && typeIds.Contains(i.InvoiceTypeId.Value));
+        }
+
+        return await query
+            .OrderBy(i => i.InvoiceNumber)
+            .Select(i => new IdNameDto
+            {
+                Id = i.Id,
+                Name = i.InvoiceNumber
+            })
+            .ToListAsync();
     }
 
     public async Task<InvoiceDetailDto> GetByIdAsync(int id, int? viewerUserId = null)

@@ -51,11 +51,15 @@ public class SupplierCategoryService : ISupplierCategoryService
         return PagedResult<SupplierCategoryResponseDto>.Create(items, totalCount, page, pageSize);
     }
 
-    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync()
+    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync(bool? isActive = null)
     {
-        return await _invoiceDb.SupplierCategories
-            .AsNoTracking()
-            .Where(c => c.IsActive)
+        var query = _invoiceDb.SupplierCategories.AsNoTracking();
+        if (isActive.HasValue)
+        {
+            query = query.Where(c => c.IsActive == isActive.Value);
+        }
+
+        return await query
             .OrderBy(c => c.Name)
             .Select(c => new IdNameDto
             {

@@ -1,5 +1,6 @@
 using InvoiceTrackingSystemBackend.Common;
 using InvoiceTrackingSystemBackend.Constants;
+using InvoiceTrackingSystemBackend.DTOs.Auth;
 using InvoiceTrackingSystemBackend.DTOs.Invoice;
 
 namespace InvoiceTrackingSystemBackend.Interfaces.Invoice;
@@ -19,5 +20,6 @@ public interface IInvoiceWorkflowHistoryService
         int? invoiceId = null,
         int? actorUserId = null,
         WorkflowActionType? actionType = null);
+    Task<IReadOnlyList<IdNameDto>> GetAllAsync();
     Task<InvoiceWorkflowHistoryResponseDto?> GetByIdAsync(int id);
 }

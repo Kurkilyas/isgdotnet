@@ -6,7 +6,7 @@ namespace InvoiceTrackingSystemBackend.Interfaces.Auth;
 public interface IPermissionService
 {
     Task<PagedResult<PermissionListDto>> GetListAsync(int page = 1, int pageSize = 20, string? search = null, bool? isActive = null);
-    Task<IReadOnlyList<IdNameDto>> GetAllAsync();
+    Task<IReadOnlyList<IdNameDto>> GetAllAsync(bool? isActive = null);
     Task<PermissionListDto> GetByIdAsync(int id);
     Task<PermissionListDto> CreateAsync(int actorUserId, CreatePermissionRequestDto request);
     Task<PermissionListDto> UpdateAsync(int actorUserId, int id, UpdatePermissionRequestDto request);

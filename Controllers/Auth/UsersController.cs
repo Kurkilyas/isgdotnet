@@ -81,6 +81,13 @@ public class UsersController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("all")]
+    public async Task<IActionResult> GetAll([FromQuery] bool? isActive = null)
+    {
+        var result = await _userService.GetAllAsync(isActive);
+        return Ok(result);
+    }
+
     [HttpGet("{id:int}")]
     [Permission("UserRead", AllowDepartmentManager = true)]
     public async Task<IActionResult> GetById(int id)

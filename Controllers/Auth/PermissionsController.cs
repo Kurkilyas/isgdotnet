@@ -36,9 +36,9 @@ public class PermissionsController : ControllerBase
 
     [HttpGet("all")]
     [Permission("AdminRead")]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] bool? isActive = null)
     {
-        var result = await _permissionService.GetAllAsync();
+        var result = await _permissionService.GetAllAsync(isActive);
         return Ok(result);
     }
 

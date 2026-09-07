@@ -1,4 +1,5 @@
 using InvoiceTrackingSystemBackend.Attributes;
+using InvoiceTrackingSystemBackend.Constants;
 using InvoiceTrackingSystemBackend.DTOs.Invoice;
 using InvoiceTrackingSystemBackend.Interfaces.Invoice;
 using Microsoft.AspNetCore.Authorization;
@@ -8,16 +9,16 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace InvoiceTrackingSystemBackend.Controllers.Invoice;
 
 [ApiController]
-[Route("api/supplier-categories")]
+[Route("api/workflow-transition-rules")]
 [Authorize]
 [EnableRateLimiting("GlobalLimit")]
-public class SupplierCategoriesController : ControllerBase
+public class WorkflowTransitionRulesController : ControllerBase
 {
-    private readonly ISupplierCategoryService _supplierCategoryService;
+    private readonly IWorkflowTransitionRuleService _service;
 
-    public SupplierCategoriesController(ISupplierCategoryService supplierCategoryService)
+    public WorkflowTransitionRulesController(IWorkflowTransitionRuleService service)
     {
-        _supplierCategoryService = supplierCategoryService;
+        _service = service;
     }
 
     [HttpGet]
@@ -25,10 +26,11 @@ public class SupplierCategoriesController : ControllerBase
     public async Task<IActionResult> GetList(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
-        [FromQuery] string? search = null,
+        [FromQuery] int? invoiceTypeId = null,
+        [FromQuery] WorkflowActionType? triggerAction = null,
         [FromQuery] bool? isActive = null)
     {
-        var result = await _supplierCategoryService.GetListAsync(page, pageSize, search, isActive);
+        var result = await _service.GetListAsync(page, pageSize, invoiceTypeId, triggerAction, isActive);
         return Ok(result);
     }
 
@@ -36,7 +38,7 @@ public class SupplierCategoriesController : ControllerBase
     [Permission("AdminRead")]
     public async Task<IActionResult> GetAll([FromQuery] bool? isActive = null)
     {
-        var result = await _supplierCategoryService.GetAllAsync(isActive);
+        var result = await _service.GetAllAsync(isActive);
         return Ok(result);
     }
 
@@ -44,23 +46,15 @@ public class SupplierCategoriesController : ControllerBase
     [Permission("AdminRead")]
     public async Task<IActionResult> GetById(int id)
     {
-        var result = await _supplierCategoryService.GetByIdAsync(id);
-        return Ok(result);
-    }
-
-    [HttpPost]
-    [Permission("AdminWrite")]
-    public async Task<IActionResult> Create([FromBody] CreateSupplierCategoryRequestDto request)
-    {
-        var result = await _supplierCategoryService.CreateAsync(request);
+        var result = await _service.GetByIdAsync(id);
         return Ok(result);
     }
 
     [HttpPut("{id:int}")]
     [Permission("AdminWrite")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateSupplierCategoryRequestDto request)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateWorkflowTransitionRuleRequestDto request)
     {
-        var result = await _supplierCategoryService.UpdateAsync(id, request);
+        var result = await _service.UpdateAsync(id, request);
         return Ok(result);
     }
 
@@ -68,7 +62,7 @@ public class SupplierCategoriesController : ControllerBase
     [Permission("AdminWrite")]
     public async Task<IActionResult> SetActive(int id, [FromBody] SetActiveRequestDto request)
     {
-        var result = await _supplierCategoryService.SetActiveAsync(id, request);
+        var result = await _service.SetActiveAsync(id, request);
         return Ok(result);
     }
 
@@ -76,7 +70,7 @@ public class SupplierCategoriesController : ControllerBase
     [Permission("AdminWrite")]
     public async Task<IActionResult> Delete(int id)
     {
-        await _supplierCategoryService.DeleteAsync(id);
-        return Ok(new { message = "Tedarikçi kategorisi silindi." });
+        await _service.DeleteAsync(id);
+        return Ok(new { message = "Geçiş kuralı silindi." });
     }
 }

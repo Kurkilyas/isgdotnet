@@ -20,6 +20,14 @@ public class InvoiceTypeStepApproversController : ControllerBase
         _approverService = approverService;
     }
 
+    [HttpGet("all")]
+    [Permission("AdminRead")]
+    public async Task<IActionResult> GetAll([FromQuery] bool? isActive = null)
+    {
+        var result = await _approverService.GetAllAsync(isActive);
+        return Ok(result);
+    }
+
     [HttpPut("{id:int}")]
     [Permission("AdminWrite")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateInvoiceTypeStepApproverRequestDto request)

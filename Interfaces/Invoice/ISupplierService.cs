@@ -7,7 +7,7 @@ namespace InvoiceTrackingSystemBackend.Interfaces.Invoice;
 public interface ISupplierService
 {
     Task<PagedResult<SupplierListDto>> GetListAsync(int page = 1, int pageSize = 20, string? search = null, bool? isActive = null, int? supplierCategoryId = null);
-    Task<IReadOnlyList<IdNameDto>> GetAllAsync();
+    Task<IReadOnlyList<IdNameDto>> GetAllAsync(bool? isActive = null);
     Task<SupplierResponseDto> GetByIdAsync(int id);
     Task<SupplierResponseDto> CreateAsync(CreateSupplierRequestDto request);
     Task<SupplierResponseDto> UpdateAsync(int id, UpdateSupplierRequestDto request);

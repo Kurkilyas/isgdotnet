@@ -15,13 +15,16 @@ public class InvoiceTypesController : ControllerBase
 {
     private readonly IInvoiceTypeService _invoiceTypeService;
     private readonly IInvoiceTypeStepService _invoiceTypeStepService;
+    private readonly IWorkflowTransitionRuleService _transitionRuleService;
 
     public InvoiceTypesController(
         IInvoiceTypeService invoiceTypeService,
-        IInvoiceTypeStepService invoiceTypeStepService)
+        IInvoiceTypeStepService invoiceTypeStepService,
+        IWorkflowTransitionRuleService transitionRuleService)
     {
         _invoiceTypeService = invoiceTypeService;
         _invoiceTypeStepService = invoiceTypeStepService;
+        _transitionRuleService = transitionRuleService;
     }
 
     [HttpGet]
@@ -38,9 +41,9 @@ public class InvoiceTypesController : ControllerBase
 
     [HttpGet("all")]
     [Permission("AdminRead")]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] bool? isActive = null)
     {
-        var result = await _invoiceTypeService.GetAllAsync();
+        var result = await _invoiceTypeService.GetAllAsync(isActive);
         return Ok(result);
     }
 
@@ -97,6 +100,24 @@ public class InvoiceTypesController : ControllerBase
     public async Task<IActionResult> CreateStep(int invoiceTypeId, [FromBody] CreateInvoiceTypeStepRequestDto request)
     {
         var result = await _invoiceTypeStepService.CreateAsync(invoiceTypeId, request);
+        return Ok(result);
+    }
+
+    [HttpGet("{invoiceTypeId:int}/transition-rules")]
+    [Permission("AdminRead")]
+    public async Task<IActionResult> GetTransitionRules(int invoiceTypeId)
+    {
+        var result = await _transitionRuleService.GetByInvoiceTypeIdAsync(invoiceTypeId);
+        return Ok(result);
+    }
+
+    [HttpPost("{invoiceTypeId:int}/transition-rules")]
+    [Permission("AdminWrite")]
+    public async Task<IActionResult> CreateTransitionRule(
+        int invoiceTypeId,
+        [FromBody] CreateWorkflowTransitionRuleRequestDto request)
+    {
+        var result = await _transitionRuleService.CreateAsync(invoiceTypeId, request);
         return Ok(result);
     }
 }
