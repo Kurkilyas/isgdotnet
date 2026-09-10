@@ -51,3 +51,13 @@ public class FlagMissingDocumentRequestDto
     [Required, MaxLength(500)]
     public string Reason { get; set; } = null!;
 }
+
+/// <summary>Workflow motorunun iade endpoint'i için aksiyon DTO'su.</summary>
+public class ReturnStepRequestDto
+{
+    [Required]
+    public int StepId { get; set; }
+
+    [Required, MaxLength(500)]
+    public string Reason { get; set; } = null!;
+}

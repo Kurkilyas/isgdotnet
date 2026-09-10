@@ -51,6 +51,13 @@ public class UsersController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("me/files")]
+    public async Task<IActionResult> GetMyFiles()
+    {
+        var result = await _userService.GetMyFilesAsync(GetCurrentUserId());
+        return Ok(result);
+    }
+
     [HttpPost("me/files")]
     [RequestSizeLimit(2 * 1024 * 1024 + 1024)]
     public async Task<IActionResult> UploadMyFile([FromForm] UserFileKind fileKind, IFormFile file)
@@ -71,6 +78,13 @@ public class UsersController : ControllerBase
     {
         var (content, contentType, _) = await _userService.OpenMyFileAsync(GetCurrentUserId(), fileKind);
         return File(content, contentType);
+    }
+
+    [HttpDelete("me/files/{fileKind}")]
+    public async Task<IActionResult> DeleteMyFile(UserFileKind fileKind)
+    {
+        await _userService.DeleteMyFileAsync(GetCurrentUserId(), fileKind);
+        return Ok(new { message = "Dosya silindi." });
     }
 
     [HttpGet]

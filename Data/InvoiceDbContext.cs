@@ -326,6 +326,11 @@ public class InvoiceDbContext : DbContext
                   .HasForeignKey(e => e.InvoiceId)
                   .OnDelete(DeleteBehavior.Cascade);
 
+            entity.HasOne(e => e.WorkflowStep)
+                  .WithMany(s => s.Attachments)
+                  .HasForeignKey(e => e.WorkflowStepId)
+                  .OnDelete(DeleteBehavior.ClientSetNull);
+
             entity.HasQueryFilter(e => e.DeletedAt == null);
         });
 

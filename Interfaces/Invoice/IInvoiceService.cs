@@ -20,17 +20,11 @@ public interface IInvoiceService
     Task<IReadOnlyList<IdNameDto>> GetAllAsync();
     Task<InvoiceDetailDto> GetByIdAsync(int id, int? viewerUserId = null);
     Task<InvoiceDetailDto> CreateAsync(CreateInvoiceRequestDto request, int? actorUserId = null);
-    Task<InvoiceDetailDto> UpdateAsync(int id, UpdateInvoiceRequestDto request);
+    Task<InvoiceDetailDto> UpdateAsync(int id, UpdateInvoiceRequestDto request, int? actorUserId = null);
     Task DeleteAsync(int id);
-
-    Task<IReadOnlyList<InvoiceLineItemResponseDto>> GetLineItemsAsync(int invoiceId);
-    Task<InvoiceLineItemResponseDto> CreateLineItemAsync(int invoiceId, CreateInvoiceLineItemRequestDto request);
-    Task<InvoiceLineItemResponseDto> UpdateLineItemAsync(int invoiceId, int lineItemId, UpdateInvoiceLineItemRequestDto request);
-    Task DeleteLineItemAsync(int invoiceId, int lineItemId);
 
     Task<IReadOnlyList<InvoiceRelationResponseDto>> GetRelationsAsync(int invoiceId);
     Task<InvoiceRelationResponseDto> CreateRelationAsync(int invoiceId, CreateInvoiceRelationRequestDto request, int? createdByUserId);
 
     Task<IReadOnlyList<InvoiceWorkflowStepResponseDto>> GetWorkflowStepsAsync(int invoiceId);
-    Task<IReadOnlyList<InvoiceAttachmentResponseDto>> GetAttachmentsAsync(int invoiceId);
 }

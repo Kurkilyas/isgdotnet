@@ -168,6 +168,10 @@ builder.Services.AddScoped<ISupplierCategoryService, SupplierCategoryService>();
 builder.Services.AddScoped<ISupplierService, SupplierService>();
 builder.Services.AddScoped<IInvoiceActivityLogService, InvoiceActivityLogService>();
 builder.Services.AddScoped<IInvoiceWorkflowHistoryService, InvoiceWorkflowHistoryService>();
+builder.Services.AddScoped<IInvoiceNotificationLogService, InvoiceNotificationLogService>();
+builder.Services.AddScoped<IInvoiceWorkflowService, InvoiceWorkflowService>();
+builder.Services.AddScoped<IInvoiceAttachmentService, InvoiceAttachmentService>();
+builder.Services.AddScoped<IInvoiceLineItemService, InvoiceLineItemService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 
 

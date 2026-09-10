@@ -14,6 +14,9 @@ public class InvoiceLineItemResponseDto
 
 public class CreateInvoiceLineItemRequestDto
 {
+    /// <summary>Bağımsız POST için zorunlu. Fatura create gövdesindeki kalemlerde yok sayılır.</summary>
+    public int InvoiceId { get; set; }
+
     [Required, MaxLength(500)]
     public string Description { get; set; } = null!;
 

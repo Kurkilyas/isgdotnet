@@ -30,6 +30,10 @@ public class InvoiceAttachment : ISoftDeletable
     /// <summary>SoftFK -> Auth DB users.Id, cross-database, EF Core navigation yok.</summary>
     public int? UploadedByUserId { get; set; }
 
+    /// <summary>Yüklendiği iş akışı adımı. Adım kapanınca ek silinemez.</summary>
+    public int? WorkflowStepId { get; set; }
+    public InvoiceWorkflowStep? WorkflowStep { get; set; }
+
     public DateTime UploadedAt { get; set; }
 
     public DateTime? DeletedAt { get; set; }

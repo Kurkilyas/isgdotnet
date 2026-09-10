@@ -6,5 +6,7 @@ public enum NotificationType
     Assigned,
     SlaReminder,
     SlaEscalated,
-    Rejected
+    Rejected,
+    Returned,
+    MissingDocument
 }

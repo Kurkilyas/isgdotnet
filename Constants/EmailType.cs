@@ -9,5 +9,7 @@ public enum EmailType
     InvoiceAssigned,
     SlaReminder,
     SlaEscalated,
-    InvoiceRejected
+    InvoiceRejected,
+    InvoiceReturned,
+    InvoiceMissingDocument
 }

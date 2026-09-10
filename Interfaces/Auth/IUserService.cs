@@ -16,6 +16,8 @@ public interface IUserService
     Task ChangePasswordAsync(int userId, ChangePasswordRequestDto request);
     Task<UserMeDto> UpdateOutOfOfficeAsync(int userId, UpdateOutOfOfficeRequestDto request);
     Task<UserFileMetaDto> UploadMyFileAsync(int userId, UserFileKind fileKind, IFormFile file);
+    Task<IReadOnlyList<UserFileMetaDto>> GetMyFilesAsync(int userId);
     Task<UserFileMetaDto> GetMyFileMetaAsync(int userId, UserFileKind fileKind);
     Task<(Stream Content, string ContentType, string FileName)> OpenMyFileAsync(int userId, UserFileKind fileKind);
+    Task DeleteMyFileAsync(int userId, UserFileKind fileKind);
 }

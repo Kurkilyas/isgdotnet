@@ -379,6 +379,17 @@ public class UserService : IUserService
         return MapFile(entity);
     }
 
+    public async Task<IReadOnlyList<UserFileMetaDto>> GetMyFilesAsync(int userId)
+    {
+        var files = await _context.UserFiles
+            .AsNoTracking()
+            .Where(f => f.UserId == userId && f.IsCurrent)
+            .OrderBy(f => f.FileKind)
+            .ToListAsync();
+
+        return files.Select(MapFile).ToList();
+    }
+
     public async Task<UserFileMetaDto> GetMyFileMetaAsync(int userId, UserFileKind fileKind)
     {
         var file = await GetCurrentFileAsync(userId, fileKind);
@@ -390,6 +401,27 @@ public class UserService : IUserService
         var file = await GetCurrentFileAsync(userId, fileKind);
         var stream = await _storage.OpenReadAsync(file.NasRelativePath);
         return (stream, file.ContentType, file.OriginalFileName);
+    }
+
+    public async Task DeleteMyFileAsync(int userId, UserFileKind fileKind)
+    {
+        var file = await _context.UserFiles
+            .Where(f => f.UserId == userId && f.FileKind == fileKind && f.IsCurrent)
+            .OrderByDescending(f => f.CreatedAt)
+            .FirstOrDefaultAsync();
+        if (file is null)
+        {
+            throw new NotFoundException(
+                fileKind == UserFileKind.SIGNATURE ? "İmza dosyası bulunamadı." : "Profil fotoğrafı bulunamadı.");
+        }
+
+        var now = DateTime.UtcNow;
+        file.IsCurrent = false;
+        file.DeletedAt = now;
+        file.UpdatedAt = now;
+        await _context.SaveChangesAsync();
+        var kindLabel = fileKind == UserFileKind.SIGNATURE ? "imza" : "profil fotoğrafı";
+        await _activityLogService.LogAsync(userId, AuthActivityType.FILE_DELETED, $"{kindLabel} silindi.");
     }
 
     private async Task<UserFile> GetCurrentFileAsync(int userId, UserFileKind fileKind)

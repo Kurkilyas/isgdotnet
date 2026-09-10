@@ -121,6 +121,12 @@ public class EmailService : IEmailService
             EmailType.InvoiceRejected => (
                 "Fatura reddedildi",
                 "<p>Merhaba {{FullName}},</p><p>{{InvoiceNumber}} numaralı fatura reddedildi. Sebep: {{Reason}}</p>"),
+            EmailType.InvoiceReturned => (
+                "Fatura iade edildi",
+                "<p>Merhaba {{FullName}},</p><p>{{InvoiceNumber}} numaralı fatura iade edildi. Sebep: {{Reason}}</p>"),
+            EmailType.InvoiceMissingDocument => (
+                "Eksik evrak bildirimi",
+                "<p>Merhaba {{FullName}},</p><p>{{InvoiceNumber}} numaralı fatura için eksik evrak bildirildi. Sebep: {{Reason}}</p>"),
             _ => throw new InvalidOperationException($"Tanımsız e-posta türü: {type}")
         };
 

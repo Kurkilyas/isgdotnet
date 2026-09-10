@@ -47,4 +47,5 @@ public class InvoiceWorkflowStep
 
     public ICollection<InvoiceActivityLog> ActivityLogs { get; set; } = new List<InvoiceActivityLog>();
     public ICollection<InvoiceNotificationLog> NotificationLogs { get; set; } = new List<InvoiceNotificationLog>();
+    public ICollection<InvoiceAttachment> Attachments { get; set; } = new List<InvoiceAttachment>();
 }

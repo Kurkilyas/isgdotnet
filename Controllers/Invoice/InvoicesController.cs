@@ -16,10 +16,12 @@ namespace InvoiceTrackingSystemBackend.Controllers.Invoice;
 public class InvoicesController : ControllerBase
 {
     private readonly IInvoiceService _invoiceService;
+    private readonly IInvoiceWorkflowService _workflowService;
 
-    public InvoicesController(IInvoiceService invoiceService)
+    public InvoicesController(IInvoiceService invoiceService, IInvoiceWorkflowService workflowService)
     {
         _invoiceService = invoiceService;
+        _workflowService = workflowService;
     }
 
     [HttpGet]
@@ -68,7 +70,7 @@ public class InvoicesController : ControllerBase
     [Permission("InvoiceWrite")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateInvoiceRequestDto request)
     {
-        var result = await _invoiceService.UpdateAsync(id, request);
+        var result = await _invoiceService.UpdateAsync(id, request, CurrentUserHelper.GetUserId(User));
         return Ok(result);
     }
 
@@ -78,38 +80,6 @@ public class InvoicesController : ControllerBase
     {
         await _invoiceService.DeleteAsync(id);
         return Ok(new { message = "Fatura silindi." });
-    }
-
-    [HttpGet("{id:int}/line-items")]
-    [Permission("InvoiceRead")]
-    public async Task<IActionResult> GetLineItems(int id)
-    {
-        var result = await _invoiceService.GetLineItemsAsync(id);
-        return Ok(result);
-    }
-
-    [HttpPost("{id:int}/line-items")]
-    [Permission("InvoiceWrite")]
-    public async Task<IActionResult> CreateLineItem(int id, [FromBody] CreateInvoiceLineItemRequestDto request)
-    {
-        var result = await _invoiceService.CreateLineItemAsync(id, request);
-        return Ok(result);
-    }
-
-    [HttpPut("{id:int}/line-items/{lineItemId:int}")]
-    [Permission("InvoiceWrite")]
-    public async Task<IActionResult> UpdateLineItem(int id, int lineItemId, [FromBody] UpdateInvoiceLineItemRequestDto request)
-    {
-        var result = await _invoiceService.UpdateLineItemAsync(id, lineItemId, request);
-        return Ok(result);
-    }
-
-    [HttpDelete("{id:int}/line-items/{lineItemId:int}")]
-    [Permission("InvoiceWrite")]
-    public async Task<IActionResult> DeleteLineItem(int id, int lineItemId)
-    {
-        await _invoiceService.DeleteLineItemAsync(id, lineItemId);
-        return Ok(new { message = "Fatura kalemi silindi." });
     }
 
     [HttpGet("{id:int}/relations")]
@@ -136,11 +106,39 @@ public class InvoicesController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet("{id:int}/attachments")]
-    [Permission("InvoiceRead")]
-    public async Task<IActionResult> GetAttachments(int id)
+    [HttpPost("{id:int}/workflow/approve")]
+    [Permission("InvoiceApprover")]
+    public async Task<IActionResult> Approve(int id, [FromBody] ApproveStepRequestDto request)
     {
-        var result = await _invoiceService.GetAttachmentsAsync(id);
+        await _workflowService.ApproveAsync(id, CurrentUserHelper.GetUserId(User), request);
+        var result = await _invoiceService.GetByIdAsync(id, CurrentUserHelper.GetUserId(User));
+        return Ok(result);
+    }
+
+    [HttpPost("{id:int}/workflow/reject")]
+    [Permission("InvoiceApprover")]
+    public async Task<IActionResult> Reject(int id, [FromBody] RejectStepRequestDto request)
+    {
+        await _workflowService.RejectAsync(id, CurrentUserHelper.GetUserId(User), request);
+        var result = await _invoiceService.GetByIdAsync(id, CurrentUserHelper.GetUserId(User));
+        return Ok(result);
+    }
+
+    [HttpPost("{id:int}/workflow/return")]
+    [Permission("InvoiceApprover")]
+    public async Task<IActionResult> Return(int id, [FromBody] ReturnStepRequestDto request)
+    {
+        await _workflowService.ReturnAsync(id, CurrentUserHelper.GetUserId(User), request);
+        var result = await _invoiceService.GetByIdAsync(id, CurrentUserHelper.GetUserId(User));
+        return Ok(result);
+    }
+
+    [HttpPost("{id:int}/workflow/missing-document")]
+    [Permission("InvoiceApprover")]
+    public async Task<IActionResult> FlagMissingDocument(int id, [FromBody] FlagMissingDocumentRequestDto request)
+    {
+        await _workflowService.FlagMissingDocumentAsync(id, CurrentUserHelper.GetUserId(User), request);
+        var result = await _invoiceService.GetByIdAsync(id, CurrentUserHelper.GetUserId(User));
         return Ok(result);
     }
 }

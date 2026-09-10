@@ -18,19 +18,22 @@ public class InvoiceService : IInvoiceService
     private readonly IInvoiceActivityLogService _activityLog;
     private readonly IInvoiceWorkflowHistoryService _workflowHistory;
     private readonly IInvoiceAccessService _access;
+    private readonly IInvoiceWorkflowService _workflow;
 
     public InvoiceService(
         InvoiceDbContext invoiceDb,
         AuthReferenceLookup authLookup,
         IInvoiceActivityLogService activityLog,
         IInvoiceWorkflowHistoryService workflowHistory,
-        IInvoiceAccessService access)
+        IInvoiceAccessService access,
+        IInvoiceWorkflowService workflow)
     {
         _invoiceDb = invoiceDb;
         _authLookup = authLookup;
         _activityLog = activityLog;
         _workflowHistory = workflowHistory;
         _access = access;
+        _workflow = workflow;
     }
 
     public async Task<PagedResult<InvoiceListItemDto>> GetListAsync(
@@ -178,6 +181,11 @@ public class InvoiceService : IInvoiceService
                 ? AssignmentMethod.SupplierSingleCandidate
                 : (AssignmentMethod?)null;
 
+        if (invoiceTypeId.HasValue)
+        {
+            await _workflow.EnsureTypeHasActiveStepsAsync(invoiceTypeId.Value);
+        }
+
         var now = DateTime.UtcNow;
         var invoice = new InvoiceEntity
         {
@@ -213,15 +221,21 @@ public class InvoiceService : IInvoiceService
             actorUserId,
             reason: "Fatura kaydı oluşturuldu.");
 
+        if (invoice.InvoiceTypeId.HasValue)
+        {
+            await _workflow.StartAsync(invoice.Id, actorUserId);
+        }
+
         return await MapDetailAsync(await LoadDetailAsync(invoice.Id));
     }
 
-    public async Task<InvoiceDetailDto> UpdateAsync(int id, UpdateInvoiceRequestDto request)
+    public async Task<InvoiceDetailDto> UpdateAsync(int id, UpdateInvoiceRequestDto request, int? actorUserId = null)
     {
         var invoice = await GetRequiredAsync(id);
         var access = await _access.ResolveAsync();
         access.EnsureCanWrite(invoice.InvoiceTypeId);
         var now = DateTime.UtcNow;
+        var shouldStartWorkflow = false;
 
         if (request.SupplierId.HasValue)
         {
@@ -248,9 +262,11 @@ public class InvoiceService : IInvoiceService
             }
 
             await EnsureInvoiceTypeExistsAsync(request.InvoiceTypeId);
+            await _workflow.EnsureTypeHasActiveStepsAsync(request.InvoiceTypeId.Value);
             access.EnsureCanWrite(request.InvoiceTypeId);
             invoice.InvoiceTypeId = request.InvoiceTypeId;
             invoice.AssignmentMethod = request.AssignmentMethod ?? AssignmentMethod.Manual;
+            shouldStartWorkflow = true;
         }
         else if (request.AssignmentMethod.HasValue)
         {
@@ -270,6 +286,12 @@ public class InvoiceService : IInvoiceService
         invoice.UpdatedAt = now;
 
         await _invoiceDb.SaveChangesAsync();
+
+        if (shouldStartWorkflow)
+        {
+            await _workflow.StartAsync(id, actorUserId);
+        }
+
         return await MapDetailAsync(await LoadDetailAsync(id));
     }
 
@@ -297,54 +319,6 @@ public class InvoiceService : IInvoiceService
             line.UpdatedAt = now;
         }
 
-        await _invoiceDb.SaveChangesAsync();
-    }
-
-    public async Task<IReadOnlyList<InvoiceLineItemResponseDto>> GetLineItemsAsync(int invoiceId)
-    {
-        await EnsureCanReadInvoiceAsync(invoiceId);
-
-        var items = await _invoiceDb.InvoiceLineItems
-            .AsNoTracking()
-            .Where(l => l.InvoiceId == invoiceId)
-            .OrderBy(l => l.Id)
-            .ToListAsync();
-
-        return items.Select(MapLineItem).ToList();
-    }
-
-    public async Task<InvoiceLineItemResponseDto> CreateLineItemAsync(int invoiceId, CreateInvoiceLineItemRequestDto request)
-    {
-        await EnsureCanWriteInvoiceAsync(invoiceId);
-
-        var line = MapNewLineItem(request, DateTime.UtcNow);
-        line.InvoiceId = invoiceId;
-        _invoiceDb.InvoiceLineItems.Add(line);
-        await _invoiceDb.SaveChangesAsync();
-
-        return MapLineItem(line);
-    }
-
-    public async Task<InvoiceLineItemResponseDto> UpdateLineItemAsync(
-        int invoiceId,
-        int lineItemId,
-        UpdateInvoiceLineItemRequestDto request)
-    {
-        await EnsureCanWriteInvoiceAsync(invoiceId);
-        var line = await GetRequiredLineItemAsync(invoiceId, lineItemId);
-        ApplyLineItem(line, request.Description, request.Quantity, request.UnitPrice, request.LineAmount);
-        line.UpdatedAt = DateTime.UtcNow;
-        await _invoiceDb.SaveChangesAsync();
-        return MapLineItem(line);
-    }
-
-    public async Task DeleteLineItemAsync(int invoiceId, int lineItemId)
-    {
-        await EnsureCanWriteInvoiceAsync(invoiceId);
-        var line = await GetRequiredLineItemAsync(invoiceId, lineItemId);
-        var now = DateTime.UtcNow;
-        line.DeletedAt = now;
-        line.UpdatedAt = now;
         await _invoiceDb.SaveChangesAsync();
     }
 
@@ -414,13 +388,6 @@ public class InvoiceService : IInvoiceService
         return await MapWorkflowStepsAsync(invoice.WorkflowSteps.ToList());
     }
 
-    public async Task<IReadOnlyList<InvoiceAttachmentResponseDto>> GetAttachmentsAsync(int invoiceId)
-    {
-        var invoice = await LoadDetailAsync(invoiceId);
-        (await _access.ResolveAsync()).EnsureCanRead(invoice.InvoiceTypeId);
-        return await MapAttachmentsAsync(invoice.Attachments.ToList());
-    }
-
     private async Task<InvoiceEntity> LoadDetailAsync(int id)
     {
         var invoice = await _invoiceDb.Invoices
@@ -482,18 +449,6 @@ public class InvoiceService : IInvoiceService
         }
 
         return invoice.InvoiceTypeId;
-    }
-
-    private async Task<InvoiceLineItem> GetRequiredLineItemAsync(int invoiceId, int lineItemId)
-    {
-        var line = await _invoiceDb.InvoiceLineItems
-            .FirstOrDefaultAsync(l => l.Id == lineItemId && l.InvoiceId == invoiceId);
-        if (line is null)
-        {
-            throw new NotFoundException("Fatura kalemi bulunamadı.");
-        }
-
-        return line;
     }
 
     private async Task EnsureNotDuplicateAsync(string vkn, string invoiceNumber, decimal amount)
@@ -670,14 +625,6 @@ public class InvoiceService : IInvoiceService
         return MapWorkflowSteps(steps, userNames, departmentNames);
     }
 
-    private async Task<List<InvoiceAttachmentResponseDto>> MapAttachmentsAsync(
-        IReadOnlyList<InvoiceAttachment> attachments)
-    {
-        var userNames = await _authLookup.GetUserFullNamesAsync(
-            attachments.Where(a => a.UploadedByUserId.HasValue).Select(a => a.UploadedByUserId!.Value));
-        return MapAttachments(attachments, userNames);
-    }
-
     private async Task<List<InvoiceRelationResponseDto>> MapRelationsAsync(IReadOnlyList<InvoiceRelation> relations)
     {
         var userNames = await _authLookup.GetUserFullNamesAsync(
@@ -795,6 +742,7 @@ public class InvoiceService : IInvoiceService
                 ChecksumSha256 = a.ChecksumSha256,
                 UploadedByUserId = a.UploadedByUserId,
                 UploadedByUserFullName = NameOf(userNames, a.UploadedByUserId),
+                WorkflowStepId = a.WorkflowStepId,
                 UploadedAt = a.UploadedAt
             })
             .ToList();

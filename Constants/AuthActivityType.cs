@@ -28,5 +28,6 @@ public enum AuthActivityType
     USER_UPDATED,
     USER_DEACTIVATED,
     OUT_OF_OFFICE_CHANGED,
-    FILE_UPLOADED
+    FILE_UPLOADED,
+    FILE_DELETED
 }
