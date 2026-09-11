@@ -92,6 +92,16 @@ public class Invoice : IAuditableEntity, ISoftDeletable
     /// <summary>Faturanın o anki genel durumu (dashboard/filtreleme için). Adım bazında detay için InvoiceWorkflowSteps sorgulanır.</summary>
     public InvoiceStatus CurrentStatus { get; set; }
 
+    /// <summary>
+    /// Departman zincirine girdikten sonra (ve sonrası adımlar / tamamlanmış) fatura içeriği değiştirilemez.
+    /// Kalem ekleme-güncelleme-silme ve fatura güncelleme/silme bu kilitte durur.
+    /// </summary>
+    public bool IsContentLocked => CurrentStatus is not (
+        InvoiceStatus.Received or
+        InvoiceStatus.PendingErpCheck or
+        InvoiceStatus.ErrorReturned or
+        InvoiceStatus.PendingAssignment);
+
     public DateTime? CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public DateTime? DeletedAt { get; set; }

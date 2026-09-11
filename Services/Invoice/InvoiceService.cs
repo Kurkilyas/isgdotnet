@@ -234,6 +234,7 @@ public class InvoiceService : IInvoiceService
         var invoice = await GetRequiredAsync(id);
         var access = await _access.ResolveAsync();
         access.EnsureCanWrite(invoice.InvoiceTypeId);
+        EnsureContentMutable(invoice);
         var now = DateTime.UtcNow;
         var shouldStartWorkflow = false;
 
@@ -307,6 +308,7 @@ public class InvoiceService : IInvoiceService
 
         var access = await _access.ResolveAsync();
         access.EnsureCanDelete(invoice.InvoiceTypeId);
+        EnsureContentMutable(invoice);
 
         var now = DateTime.UtcNow;
         invoice.DeletedAt = now;
@@ -434,6 +436,15 @@ public class InvoiceService : IInvoiceService
     {
         var typeId = await GetInvoiceTypeIdAsync(invoiceId);
         (await _access.ResolveAsync()).EnsureCanWrite(typeId);
+    }
+
+    private static void EnsureContentMutable(InvoiceEntity invoice)
+    {
+        if (invoice.IsContentLocked)
+        {
+            throw new BadRequestException(
+                "Departman sürecine girmiş veya tamamlanmış fatura değiştirilemez.");
+        }
     }
 
     private async Task<int?> GetInvoiceTypeIdAsync(int invoiceId)

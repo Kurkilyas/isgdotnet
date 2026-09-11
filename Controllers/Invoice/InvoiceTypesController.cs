@@ -40,7 +40,7 @@ public class InvoiceTypesController : ControllerBase
     }
 
     [HttpGet("all")]
-    [Permission("AdminRead")]
+   [AllowAnonymous]
     public async Task<IActionResult> GetAll([FromQuery] bool? isActive = null)
     {
         var result = await _invoiceTypeService.GetAllAsync(isActive);

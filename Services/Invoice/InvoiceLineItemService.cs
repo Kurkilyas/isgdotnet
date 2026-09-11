@@ -86,13 +86,12 @@ public class InvoiceLineItemService : IInvoiceLineItemService
             throw new BadRequestException("Geçerli bir fatura seçilmedi.");
         }
 
-        await EnsureCanWriteInvoiceAsync(request.InvoiceId);
+        var invoice = await GetRequiredInvoiceForWriteAsync(request.InvoiceId);
         var now = DateTime.UtcNow;
         var line = MapNew(request, now);
         line.InvoiceId = request.InvoiceId;
         _invoiceDb.InvoiceLineItems.Add(line);
 
-        var invoice = await GetRequiredInvoiceAsync(request.InvoiceId);
         invoice.UpdatedAt = now;
         await _invoiceDb.SaveChangesAsync();
         return Map(line);
@@ -101,12 +100,11 @@ public class InvoiceLineItemService : IInvoiceLineItemService
     public async Task<InvoiceLineItemResponseDto> UpdateAsync(int id, UpdateInvoiceLineItemRequestDto request)
     {
         var line = await GetRequiredAsync(id, tracking: true);
-        await EnsureCanWriteInvoiceAsync(line.InvoiceId);
+        var invoice = await GetRequiredInvoiceForWriteAsync(line.InvoiceId);
         var now = DateTime.UtcNow;
         Apply(line, request.Description, request.Quantity, request.UnitPrice, request.LineAmount);
         line.UpdatedAt = now;
 
-        var invoice = await GetRequiredInvoiceAsync(line.InvoiceId);
         invoice.UpdatedAt = now;
         await _invoiceDb.SaveChangesAsync();
         return Map(line);
@@ -115,12 +113,11 @@ public class InvoiceLineItemService : IInvoiceLineItemService
     public async Task DeleteAsync(int id)
     {
         var line = await GetRequiredAsync(id, tracking: true);
-        await EnsureCanWriteInvoiceAsync(line.InvoiceId);
+        var invoice = await GetRequiredInvoiceForWriteAsync(line.InvoiceId);
         var now = DateTime.UtcNow;
         line.DeletedAt = now;
         line.UpdatedAt = now;
 
-        var invoice = await GetRequiredInvoiceAsync(line.InvoiceId);
         invoice.UpdatedAt = now;
         await _invoiceDb.SaveChangesAsync();
     }
@@ -161,10 +158,21 @@ public class InvoiceLineItemService : IInvoiceLineItemService
         access.EnsureCanRead(typeId);
     }
 
-    private async Task EnsureCanWriteInvoiceAsync(int invoiceId)
+    private async Task<InvoiceEntity> GetRequiredInvoiceForWriteAsync(int invoiceId)
     {
-        var typeId = await GetInvoiceTypeIdAsync(invoiceId);
-        (await _access.ResolveAsync()).EnsureCanWrite(typeId);
+        var invoice = await GetRequiredInvoiceAsync(invoiceId);
+        (await _access.ResolveAsync()).EnsureCanWrite(invoice.InvoiceTypeId);
+        EnsureContentMutable(invoice);
+        return invoice;
+    }
+
+    private static void EnsureContentMutable(InvoiceEntity invoice)
+    {
+        if (invoice.IsContentLocked)
+        {
+            throw new BadRequestException(
+                "Departman sürecine girmiş veya tamamlanmış faturanın kalemleri değiştirilemez.");
+        }
     }
 
     private async Task<int?> GetInvoiceTypeIdAsync(int invoiceId)
