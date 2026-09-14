@@ -20,7 +20,7 @@ public class InvoiceTypeStepApproverService : IInvoiceTypeStepApproverService
         _authLookup = authLookup;
     }
 
-    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync(bool? isActive = null)
+    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync(bool? isActive = null, string? name = null)
     {
         var query = _invoiceDb.InvoiceTypeStepApprovers.AsNoTracking();
         if (isActive.HasValue)
@@ -35,11 +35,13 @@ public class InvoiceTypeStepApproverService : IInvoiceTypeStepApproverService
             .ToListAsync();
 
         var userNames = await _authLookup.GetUserFullNamesAsync(rows.Select(r => r.UserId));
-        return rows.Select(r => new IdNameDto
+        var items = rows.Select(r => new IdNameDto
         {
             Id = r.Id,
             Name = userNames.GetValueOrDefault(r.UserId) ?? $"#{r.UserId}"
-        }).ToList();
+        });
+
+        return IdNameDto.FilterByName(items, name);
     }
 
     public async Task<IReadOnlyList<InvoiceTypeStepApproverResponseDto>> GetByStepIdAsync(int invoiceTypeStepId)

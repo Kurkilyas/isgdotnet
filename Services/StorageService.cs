@@ -44,6 +44,30 @@ public class StorageService : IStorageService
         return File.Exists(Resolve(relativePath));
     }
 
+    public Task MoveAsync(string sourceRelativePath, string destinationRelativePath, CancellationToken cancellationToken = default)
+    {
+        var sourceFullPath = Resolve(sourceRelativePath);
+        if (!File.Exists(sourceFullPath))
+        {
+            return Task.CompletedTask;
+        }
+
+        var destFullPath = Resolve(destinationRelativePath);
+        var destDirectory = Path.GetDirectoryName(destFullPath);
+        if (!string.IsNullOrEmpty(destDirectory))
+        {
+            Directory.CreateDirectory(destDirectory);
+        }
+
+        if (File.Exists(destFullPath))
+        {
+            File.Delete(destFullPath);
+        }
+
+        File.Move(sourceFullPath, destFullPath);
+        return Task.CompletedTask;
+    }
+
     private string Resolve(string relativePath)
     {
         if (string.IsNullOrWhiteSpace(relativePath))

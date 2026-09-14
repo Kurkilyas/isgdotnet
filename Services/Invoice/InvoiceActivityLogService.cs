@@ -118,7 +118,7 @@ public class InvoiceActivityLogService : IInvoiceActivityLogService
         return PagedResult<InvoiceActivityLogResponseDto>.Create(items, totalCount, page, pageSize);
     }
 
-    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync()
+    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync(string? name = null)
     {
         var rows = await _invoiceDb.InvoiceActivityLogs
             .AsNoTracking()
@@ -126,13 +126,15 @@ public class InvoiceActivityLogService : IInvoiceActivityLogService
             .Select(e => new { e.Id, e.Description, e.ActivityType, e.InvoiceId })
             .ToListAsync();
 
-        return rows.Select(e => new IdNameDto
+        var items = rows.Select(e => new IdNameDto
         {
             Id = e.Id,
             Name = string.IsNullOrWhiteSpace(e.Description)
                 ? $"{e.ActivityType} #{e.InvoiceId}"
                 : e.Description
-        }).ToList();
+        });
+
+        return IdNameDto.FilterByName(items, name);
     }
 
     public async Task<InvoiceActivityLogResponseDto?> GetByIdAsync(int id)

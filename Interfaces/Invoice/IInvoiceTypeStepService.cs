@@ -5,7 +5,7 @@ namespace InvoiceTrackingSystemBackend.Interfaces.Invoice;
 
 public interface IInvoiceTypeStepService
 {
-    Task<IReadOnlyList<IdNameDto>> GetAllAsync(bool? isActive = null);
+    Task<IReadOnlyList<IdNameDto>> GetAllAsync(bool? isActive = null, string? name = null);
     Task<IReadOnlyList<InvoiceTypeStepResponseDto>> GetByInvoiceTypeIdAsync(int invoiceTypeId);
     Task<InvoiceTypeStepResponseDto> GetByIdAsync(int id);
     Task<InvoiceTypeStepResponseDto> CreateAsync(int invoiceTypeId, CreateInvoiceTypeStepRequestDto request);

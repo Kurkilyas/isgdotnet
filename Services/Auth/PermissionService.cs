@@ -55,12 +55,18 @@ public class PermissionService : IPermissionService
         return PagedResult<PermissionListDto>.Create(items, totalCount, page, pageSize);
     }
 
-    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync(bool? isActive = null)
+    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync(bool? isActive = null, string? name = null)
     {
         var query = _context.Permissions.AsNoTracking();
         if (isActive.HasValue)
         {
             query = query.Where(p => p.IsActive == isActive.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            var term = name.Trim();
+            query = query.Where(p => p.DisplayName.Contains(term));
         }
 
         return await query

@@ -13,7 +13,7 @@ public interface IWorkflowTransitionRuleService
         int? invoiceTypeId = null,
         WorkflowActionType? triggerAction = null,
         bool? isActive = null);
-    Task<IReadOnlyList<IdNameDto>> GetAllAsync(bool? isActive = null);
+    Task<IReadOnlyList<IdNameDto>> GetAllAsync(bool? isActive = null, string? name = null);
     Task<IReadOnlyList<WorkflowTransitionRuleResponseDto>> GetByInvoiceTypeIdAsync(int invoiceTypeId);
     Task<WorkflowTransitionRuleResponseDto> GetByIdAsync(int id);
     Task<WorkflowTransitionRuleResponseDto> CreateAsync(int invoiceTypeId, CreateWorkflowTransitionRuleRequestDto request);

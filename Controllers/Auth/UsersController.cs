@@ -96,9 +96,9 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("all")]
-    public async Task<IActionResult> GetAll([FromQuery] bool? isActive = null)
+    public async Task<IActionResult> GetAll([FromQuery] bool? isActive = null, [FromQuery] string? name = null)
     {
-        var result = await _userService.GetAllAsync(isActive);
+        var result = await _userService.GetAllAsync(isActive, name);
         return Ok(result);
     }
 

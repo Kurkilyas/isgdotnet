@@ -12,6 +12,7 @@ public sealed class InvoiceAccessScope
     public bool CanAccessAll { get; init; }
     public bool CanMutateAll { get; init; }
     public IReadOnlySet<int> InvoiceTypeIds { get; init; } = new HashSet<int>();
+    public IReadOnlySet<int> DepartmentIds { get; init; } = new HashSet<int>();
 
     public bool CanRead(int? invoiceTypeId)
     {

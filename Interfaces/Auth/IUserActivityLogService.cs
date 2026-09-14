@@ -13,6 +13,6 @@ public interface IUserActivityLogService
         int? userId = null,
         string? description = null,
         AuthActivityType? activityType = null);
-    Task<IReadOnlyList<IdNameDto>> GetAllAsync();
+    Task<IReadOnlyList<IdNameDto>> GetAllAsync(string? name = null);
     Task<UserActivityLogDto?> GetByIdAsync(int id);
 }

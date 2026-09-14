@@ -15,6 +15,6 @@ public interface IInvoiceActivityLogService
         int? userId = null,
         InvoiceActivityType? activityType = null,
         string? description = null);
-    Task<IReadOnlyList<IdNameDto>> GetAllAsync();
+    Task<IReadOnlyList<IdNameDto>> GetAllAsync(string? name = null);
     Task<InvoiceActivityLogResponseDto?> GetByIdAsync(int id);
 }

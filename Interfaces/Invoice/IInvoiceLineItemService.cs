@@ -11,7 +11,7 @@ public interface IInvoiceLineItemService
         int pageSize = 20,
         int? invoiceId = null,
         string? search = null);
-    Task<IReadOnlyList<IdNameDto>> GetAllAsync(int? invoiceId = null);
+    Task<IReadOnlyList<IdNameDto>> GetAllAsync(int? invoiceId = null, string? name = null);
     Task<InvoiceLineItemResponseDto> GetByIdAsync(int id);
     Task<InvoiceLineItemResponseDto> CreateAsync(CreateInvoiceLineItemRequestDto request);
     Task<InvoiceLineItemResponseDto> UpdateAsync(int id, UpdateInvoiceLineItemRequestDto request);

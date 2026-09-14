@@ -20,6 +20,6 @@ public interface IInvoiceWorkflowHistoryService
         int? invoiceId = null,
         int? actorUserId = null,
         WorkflowActionType? actionType = null);
-    Task<IReadOnlyList<IdNameDto>> GetAllAsync();
+    Task<IReadOnlyList<IdNameDto>> GetAllAsync(string? name = null);
     Task<InvoiceWorkflowHistoryResponseDto?> GetByIdAsync(int id);
 }

@@ -37,6 +37,7 @@ public class InvoiceAccessService : IInvoiceAccessService
         var permissions = CurrentUserHelper.GetPermissions(http.User);
         var canAccessAll = permissions.Contains("AdminRead") || permissions.Contains("AdminWrite");
         var canMutateAll = permissions.Contains("AdminWrite");
+        var departmentIds = (await GetRoleDepartmentIdsAsync(userId)).ToHashSet();
 
         if (canAccessAll)
         {
@@ -44,27 +45,27 @@ public class InvoiceAccessService : IInvoiceAccessService
             {
                 CanAccessAll = true,
                 CanMutateAll = canMutateAll,
-                InvoiceTypeIds = new HashSet<int>()
+                InvoiceTypeIds = new HashSet<int>(),
+                DepartmentIds = departmentIds
             };
             http.Items[HttpScopeKey] = scope;
             return scope;
         }
 
-        var typeIds = await GetAccessibleInvoiceTypeIdsAsync(userId);
+        var typeIds = await GetAccessibleInvoiceTypeIdsAsync(userId, departmentIds);
         scope = new InvoiceAccessScope
         {
             CanAccessAll = false,
             CanMutateAll = false,
-            InvoiceTypeIds = typeIds
+            InvoiceTypeIds = typeIds,
+            DepartmentIds = departmentIds
         };
         http.Items[HttpScopeKey] = scope;
         return scope;
     }
 
-    private async Task<IReadOnlySet<int>> GetAccessibleInvoiceTypeIdsAsync(int userId)
+    private async Task<IReadOnlySet<int>> GetAccessibleInvoiceTypeIdsAsync(int userId, IReadOnlySet<int> departmentIds)
     {
-        var departmentIds = await GetRoleDepartmentIdsAsync(userId);
-
         var fromApprovers = await _invoiceDb.InvoiceTypeStepApprovers
             .AsNoTracking()
             .Where(a =>

@@ -44,9 +44,27 @@ public class InvoicesController : ControllerBase
 
     [HttpGet("all")]
     [Permission("InvoiceRead")]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] string? name = null)
     {
-        var result = await _invoiceService.GetAllAsync();
+        var result = await _invoiceService.GetAllAsync(name);
+        return Ok(result);
+    }
+
+    [HttpGet("summary")]
+    [Permission("InvoiceRead")]
+    public async Task<IActionResult> GetMySummary()
+    {
+        var result = await _invoiceService.GetMySummaryAsync(CurrentUserHelper.GetUserId(User));
+        return Ok(result);
+    }
+
+    [HttpGet("inbox")]
+    [Permission("InvoiceRead")]
+    public async Task<IActionResult> GetInbox(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 5)
+    {
+        var result = await _invoiceService.GetInboxAsync(CurrentUserHelper.GetUserId(User), page, pageSize);
         return Ok(result);
     }
 
@@ -80,6 +98,14 @@ public class InvoicesController : ControllerBase
     {
         await _invoiceService.DeleteAsync(id);
         return Ok(new { message = "Fatura silindi." });
+    }
+
+    [HttpPost("{id:int}/archive")]
+    [Permission("InvoiceArchive")]
+    public async Task<IActionResult> Archive(int id)
+    {
+        var result = await _invoiceService.ArchiveAsync(id, CurrentUserHelper.GetUserId(User));
+        return Ok(result);
     }
 
     [HttpGet("{id:int}/relations")]

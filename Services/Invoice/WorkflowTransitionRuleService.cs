@@ -70,7 +70,7 @@ public class WorkflowTransitionRuleService : IWorkflowTransitionRuleService
             pageSize);
     }
 
-    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync(bool? isActive = null)
+    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync(bool? isActive = null, string? name = null)
     {
         var query = Query();
         if (isActive.HasValue)
@@ -83,11 +83,13 @@ public class WorkflowTransitionRuleService : IWorkflowTransitionRuleService
             .ThenBy(r => r.Id)
             .ToListAsync();
 
-        return rules.Select(r => new IdNameDto
+        var items = rules.Select(r => new IdNameDto
         {
             Id = r.Id,
             Name = $"{r.SourceStep?.StepName ?? "*"} → {r.TargetStep.StepName} ({r.TriggerAction})"
-        }).ToList();
+        });
+
+        return IdNameDto.FilterByName(items, name);
     }
 
     public async Task<IReadOnlyList<WorkflowTransitionRuleResponseDto>> GetByInvoiceTypeIdAsync(int invoiceTypeId)

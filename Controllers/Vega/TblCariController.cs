@@ -26,9 +26,9 @@ public class TblCariController : ControllerBase
     }
 
     [HttpGet("all")]
-    public async Task<IActionResult> GetAll([FromQuery] bool? isActive = null)
+    public async Task<IActionResult> GetAll([FromQuery] bool? isActive = null, [FromQuery] string? name = null)
     {
-        var result = await _service.GetAllAsync(isActive);
+        var result = await _service.GetAllAsync(isActive, name);
         return Ok(result);
     }
 

@@ -84,7 +84,7 @@ public class UserActivityLogService : IUserActivityLogService
         return PagedResult<UserActivityLogDto>.Create(items, totalCount, page, pageSize);
     }
 
-    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync()
+    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync(string? name = null)
     {
         var rows = await _context.AuthActivityLogs
             .AsNoTracking()
@@ -92,13 +92,15 @@ public class UserActivityLogService : IUserActivityLogService
             .Select(e => new { e.Id, e.Description, e.ActivityType })
             .ToListAsync();
 
-        return rows.Select(e => new IdNameDto
+        var items = rows.Select(e => new IdNameDto
         {
             Id = e.Id,
             Name = string.IsNullOrWhiteSpace(e.Description)
                 ? e.ActivityType.ToString()
                 : e.Description
-        }).ToList();
+        });
+
+        return IdNameDto.FilterByName(items, name);
     }
 
     public async Task<UserActivityLogDto?> GetByIdAsync(int id)

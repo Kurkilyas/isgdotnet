@@ -53,12 +53,20 @@ public class TblMuhCariHesapKodlariService : ITblMuhCariHesapKodlariService
         }
     }
 
-    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync()
+    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync(string? name = null)
     {
         try
         {
-            return await _context.TblMuhCariHesapKodlaris
-                .AsNoTracking()
+            var query = _context.TblMuhCariHesapKodlaris.AsNoTracking();
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                var term = name.Trim();
+                query = query.Where(e =>
+                    (e.GiderCesitKodu != null && e.GiderCesitKodu.Contains(term)) ||
+                    e.FirmaNo.ToString().Contains(term));
+            }
+
+            return await query
                 .OrderBy(e => e.Ind)
                 .Select(e => new IdNameDto
                 {

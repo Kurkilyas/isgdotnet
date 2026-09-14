@@ -13,7 +13,7 @@ public interface IInvoiceAttachmentService
         int? workflowStepId = null,
         int? uploadedByUserId = null,
         string? search = null);
-    Task<IReadOnlyList<IdNameDto>> GetAllAsync(int? invoiceId = null);
+    Task<IReadOnlyList<IdNameDto>> GetAllAsync(int? invoiceId = null, string? name = null);
     Task<InvoiceAttachmentResponseDto> GetByIdAsync(int id);
     Task<IReadOnlyList<InvoiceAttachmentResponseDto>> CreateAsync(
         int invoiceId,

@@ -60,6 +60,9 @@ public class InvoiceDetailDto
     public InvoiceStatus CurrentStatus { get; set; }
     public DateTime? CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
+    public DateTime? ArchivedAt { get; set; }
+    public int? ArchivedByUserId { get; set; }
+    public string? ArchivedByUserFullName { get; set; }
 
     public List<InvoiceLineItemResponseDto> LineItems { get; set; } = new();
     public List<InvoiceWorkflowStepResponseDto> WorkflowSteps { get; set; } = new();
@@ -115,4 +118,13 @@ public class UpdateInvoiceRequestDto
 
     [MaxLength(500)]
     public string? ErrorReason { get; set; }
+}
+
+/// <summary>Kullanıcının kendine / departman havuzuna atanmış faturalarının dashboard özeti.</summary>
+public class InvoiceDashboardSummaryDto
+{
+    public int ActiveCount { get; set; }
+    public int ApprovedCount { get; set; }
+    public int ApproachingCount { get; set; }
+    public int ArchivedCount { get; set; }
 }

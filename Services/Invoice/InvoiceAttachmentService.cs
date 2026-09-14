@@ -93,10 +93,16 @@ public class InvoiceAttachmentService : IInvoiceAttachmentService
         return PagedResult<InvoiceAttachmentResponseDto>.Create(items, totalCount, page, pageSize);
     }
 
-    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync(int? invoiceId = null)
+    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync(int? invoiceId = null, string? name = null)
     {
         var access = await _access.ResolveAsync();
         var query = await BuildVisibleQueryAsync(access, invoiceId);
+
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            var term = name.Trim();
+            query = query.Where(a => a.FileName.Contains(term));
+        }
 
         var rows = await query
             .OrderByDescending(a => a.UploadedAt)

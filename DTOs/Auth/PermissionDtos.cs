@@ -55,4 +55,17 @@ public class IdNameDto
 {
     public int Id { get; set; }
     public string Name { get; set; } = null!;
+
+    public static IReadOnlyList<IdNameDto> FilterByName(IEnumerable<IdNameDto> items, string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return items as IReadOnlyList<IdNameDto> ?? items.ToList();
+        }
+
+        var term = name.Trim();
+        return items
+            .Where(i => i.Name.Contains(term, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
 }

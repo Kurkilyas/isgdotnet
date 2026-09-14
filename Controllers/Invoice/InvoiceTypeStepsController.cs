@@ -26,9 +26,9 @@ public class InvoiceTypeStepsController : ControllerBase
 
     [HttpGet("all")]
     [Permission("AdminRead")]
-    public async Task<IActionResult> GetAll([FromQuery] bool? isActive = null)
+    public async Task<IActionResult> GetAll([FromQuery] bool? isActive = null, [FromQuery] string? name = null)
     {
-        var result = await _invoiceTypeStepService.GetAllAsync(isActive);
+        var result = await _invoiceTypeStepService.GetAllAsync(isActive, name);
         return Ok(result);
     }
 

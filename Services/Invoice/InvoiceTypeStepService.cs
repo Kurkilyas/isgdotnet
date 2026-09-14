@@ -20,12 +20,18 @@ public class InvoiceTypeStepService : IInvoiceTypeStepService
         _authLookup = authLookup;
     }
 
-    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync(bool? isActive = null)
+    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync(bool? isActive = null, string? name = null)
     {
         var query = _invoiceDb.InvoiceTypeSteps.AsNoTracking();
         if (isActive.HasValue)
         {
             query = query.Where(s => s.IsActive == isActive.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            var term = name.Trim();
+            query = query.Where(s => s.StepName.Contains(term));
         }
 
         return await query

@@ -7,6 +7,6 @@ namespace InvoiceTrackingSystemBackend.Interfaces.Vega;
 public interface ITblCariService
 {
     Task<PagedResult<TblCariListDto>> GetListAsync(int page = 1, int pageSize = 20);
-    Task<IReadOnlyList<IdNameDto>> GetAllAsync(bool? isActive = null);
+    Task<IReadOnlyList<IdNameDto>> GetAllAsync(bool? isActive = null, string? name = null);
     Task<TblCariDetailDto?> GetByIdAsync(int id);
 }

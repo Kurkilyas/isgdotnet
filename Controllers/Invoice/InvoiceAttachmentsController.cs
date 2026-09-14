@@ -38,9 +38,9 @@ public class InvoiceAttachmentsController : ControllerBase
 
     [HttpGet("all")]
     [Permission("InvoiceRead")]
-    public async Task<IActionResult> GetAll([FromQuery] int? invoiceId = null)
+    public async Task<IActionResult> GetAll([FromQuery] int? invoiceId = null, [FromQuery] string? name = null)
     {
-        var result = await _service.GetAllAsync(invoiceId);
+        var result = await _service.GetAllAsync(invoiceId, name);
         return Ok(result);
     }
 

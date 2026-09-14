@@ -77,12 +77,18 @@ public class UserService : IUserService
         return PagedResult<UserListDto>.Create(items, totalCount, page, pageSize);
     }
 
-    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync(bool? isActive = null)
+    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync(bool? isActive = null, string? name = null)
     {
         var query = _context.Users.AsNoTracking();
         if (isActive.HasValue)
         {
             query = query.Where(u => u.IsActive == isActive.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            var term = name.Trim();
+            query = query.Where(u => u.FullName.Contains(term));
         }
 
         return await query

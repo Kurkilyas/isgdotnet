@@ -61,12 +61,18 @@ public class InvoiceTypeService : IInvoiceTypeService
         return PagedResult<InvoiceTypeListDto>.Create(items, totalCount, page, pageSize);
     }
 
-    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync(bool? isActive = null)
+    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync(bool? isActive = null, string? name = null)
     {
         var query = _invoiceDb.InvoiceTypes.AsNoTracking();
         if (isActive.HasValue)
         {
             query = query.Where(t => t.IsActive == isActive.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            var term = name.Trim();
+            query = query.Where(t => t.Name.Contains(term));
         }
 
         return await query

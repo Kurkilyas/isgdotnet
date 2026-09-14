@@ -7,7 +7,7 @@ namespace InvoiceTrackingSystemBackend.Interfaces.Auth;
 public interface IUserService
 {
     Task<PagedResult<UserListDto>> GetListAsync(int actorUserId, int page = 1, int pageSize = 20);
-    Task<IReadOnlyList<IdNameDto>> GetAllAsync(bool? isActive = null);
+    Task<IReadOnlyList<IdNameDto>> GetAllAsync(bool? isActive = null, string? name = null);
     Task<UserListDto?> GetByIdAsync(int actorUserId, int id);
     Task<UserListDto> UpdateUserAsync(int actorUserId, int id, UpdateUserRequestDto request);
     Task<UserListDto> SetUserActiveAsync(int actorUserId, int id, SetUserActiveRequestDto request);

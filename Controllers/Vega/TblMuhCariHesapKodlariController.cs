@@ -26,9 +26,9 @@ public class TblMuhCariHesapKodlariController : ControllerBase
     }
 
     [HttpGet("all")]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] string? name = null)
     {
-        var result = await _service.GetAllAsync();
+        var result = await _service.GetAllAsync(name);
         return Ok(result);
     }
 

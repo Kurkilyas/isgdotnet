@@ -5,6 +5,7 @@ using InvoiceTrackingSystemBackend.DTOs.Auth;
 using InvoiceTrackingSystemBackend.DTOs.Invoice;
 using InvoiceTrackingSystemBackend.Entities.Invoice;
 using InvoiceTrackingSystemBackend.Exceptions;
+using InvoiceTrackingSystemBackend.Interfaces;
 using InvoiceTrackingSystemBackend.Interfaces.Invoice;
 using Microsoft.EntityFrameworkCore;
 using InvoiceEntity = InvoiceTrackingSystemBackend.Entities.Invoice.Invoice;
@@ -19,6 +20,7 @@ public class InvoiceService : IInvoiceService
     private readonly IInvoiceWorkflowHistoryService _workflowHistory;
     private readonly IInvoiceAccessService _access;
     private readonly IInvoiceWorkflowService _workflow;
+    private readonly IStorageService _storage;
 
     public InvoiceService(
         InvoiceDbContext invoiceDb,
@@ -26,7 +28,8 @@ public class InvoiceService : IInvoiceService
         IInvoiceActivityLogService activityLog,
         IInvoiceWorkflowHistoryService workflowHistory,
         IInvoiceAccessService access,
-        IInvoiceWorkflowService workflow)
+        IInvoiceWorkflowService workflow,
+        IStorageService storage)
     {
         _invoiceDb = invoiceDb;
         _authLookup = authLookup;
@@ -34,6 +37,7 @@ public class InvoiceService : IInvoiceService
         _workflowHistory = workflowHistory;
         _access = access;
         _workflow = workflow;
+        _storage = storage;
     }
 
     public async Task<PagedResult<InvoiceListItemDto>> GetListAsync(
@@ -125,7 +129,7 @@ public class InvoiceService : IInvoiceService
         return PagedResult<InvoiceListItemDto>.Create(items, totalCount, page, pageSize);
     }
 
-    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync()
+    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync(string? name = null)
     {
         var access = await _access.ResolveAsync();
         if (!access.CanAccessAll && access.InvoiceTypeIds.Count == 0)
@@ -140,6 +144,12 @@ public class InvoiceService : IInvoiceService
             query = query.Where(i => i.InvoiceTypeId != null && typeIds.Contains(i.InvoiceTypeId.Value));
         }
 
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            var term = name.Trim();
+            query = query.Where(i => i.InvoiceNumber.Contains(term));
+        }
+
         return await query
             .OrderBy(i => i.InvoiceNumber)
             .Select(i => new IdNameDto
@@ -148,6 +158,129 @@ public class InvoiceService : IInvoiceService
                 Name = i.InvoiceNumber
             })
             .ToListAsync();
+    }
+
+    public async Task<InvoiceDashboardSummaryDto> GetMySummaryAsync(int userId)
+    {
+        var access = await _access.ResolveAsync();
+        var departmentIds = access.DepartmentIds.ToList();
+        var now = DateTime.UtcNow;
+        var approachingUntil = now.AddHours(8);
+
+        var involved = _invoiceDb.Invoices
+            .AsNoTracking()
+            .Where(i => i.WorkflowSteps.Any(s =>
+                s.AssignedUserId == userId ||
+                (s.AssignedDepartmentId != null && departmentIds.Contains(s.AssignedDepartmentId.Value))));
+
+        var rows = await involved
+            .Select(i => new
+            {
+                Status = i.CurrentStatus,
+                WaitingForMe = i.WorkflowSteps.Any(s =>
+                    s.CompletedAt == null &&
+                    (s.AssignedUserId == userId ||
+                     (s.AssignedDepartmentId != null && departmentIds.Contains(s.AssignedDepartmentId.Value)))),
+                IsApproaching = i.WorkflowSteps.Any(s =>
+                    s.CompletedAt == null &&
+                    (s.AssignedUserId == userId ||
+                     (s.AssignedDepartmentId != null && departmentIds.Contains(s.AssignedDepartmentId.Value))) &&
+                    s.DueAt != null &&
+                    s.DueAt > now &&
+                    s.DueAt <= approachingUntil)
+            })
+            .ToListAsync();
+
+        return new InvoiceDashboardSummaryDto
+        {
+            ActiveCount = rows.Count(r =>
+                r.WaitingForMe &&
+                r.Status != InvoiceStatus.Completed &&
+                r.Status != InvoiceStatus.Archived &&
+                r.Status != InvoiceStatus.Rejected),
+            ApprovedCount = rows.Count(r => r.Status == InvoiceStatus.Completed),
+            ApproachingCount = rows.Count(r => r.IsApproaching),
+            ArchivedCount = rows.Count(r => r.Status == InvoiceStatus.Archived)
+        };
+    }
+
+    public async Task<PagedResult<InvoiceListItemDto>> GetInboxAsync(int userId, int page = 1, int pageSize = 5)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 5;
+
+        var access = await _access.ResolveAsync();
+        var departmentIds = access.DepartmentIds.ToList();
+
+        var query = _invoiceDb.Invoices.AsNoTracking();
+        var waiting = query.Where(i => i.WorkflowSteps.Any(s =>
+            s.CompletedAt == null &&
+            (s.AssignedUserId == userId ||
+             (s.AssignedDepartmentId != null && departmentIds.Contains(s.AssignedDepartmentId.Value)))));
+
+        if (await waiting.AnyAsync())
+        {
+            query = waiting;
+        }
+        else
+        {
+            if (!access.CanAccessAll && access.InvoiceTypeIds.Count == 0)
+            {
+                return PagedResult<InvoiceListItemDto>.Create([], 0, page, pageSize);
+            }
+
+            query = query.Where(i => i.WorkflowSteps.Any(s => s.CompletedAt == null));
+            if (!access.CanAccessAll)
+            {
+                var typeIds = access.InvoiceTypeIds.ToList();
+                query = query.Where(i => i.InvoiceTypeId != null && typeIds.Contains(i.InvoiceTypeId.Value));
+            }
+        }
+
+        var ordered = query.Select(i => new
+        {
+            i.Id,
+            DueAt = i.WorkflowSteps
+                .Where(s => s.CompletedAt == null && s.DueAt != null)
+                .Min(s => s.DueAt),
+            i.InvoiceDate
+        });
+
+        var totalCount = await ordered.CountAsync();
+        var ids = await ordered
+            .OrderBy(x => x.DueAt == null)
+            .ThenBy(x => x.DueAt)
+            .ThenByDescending(x => x.InvoiceDate)
+            .ThenByDescending(x => x.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(x => x.Id)
+            .ToListAsync();
+
+        if (ids.Count == 0)
+        {
+            return PagedResult<InvoiceListItemDto>.Create([], totalCount, page, pageSize);
+        }
+
+        var invoices = await _invoiceDb.Invoices
+            .AsNoTracking()
+            .Include(i => i.Supplier)
+            .Include(i => i.InvoiceType)
+            .Where(i => ids.Contains(i.Id))
+            .ToListAsync();
+
+        var byId = invoices.ToDictionary(i => i.Id);
+        var currentSteps = await LoadCurrentStepsAsync(ids);
+        var items = ids
+            .Where(byId.ContainsKey)
+            .Select(id =>
+            {
+                currentSteps.TryGetValue(id, out var step);
+                return MapList(byId[id], step);
+            })
+            .ToList();
+
+        return PagedResult<InvoiceListItemDto>.Create(items, totalCount, page, pageSize);
     }
 
     public async Task<InvoiceDetailDto> GetByIdAsync(int id, int? viewerUserId = null)
@@ -322,6 +455,61 @@ public class InvoiceService : IInvoiceService
         }
 
         await _invoiceDb.SaveChangesAsync();
+    }
+
+    public async Task<InvoiceDetailDto> ArchiveAsync(int id, int actorUserId)
+    {
+        var invoice = await _invoiceDb.Invoices
+            .Include(i => i.Attachments)
+            .FirstOrDefaultAsync(i => i.Id == id);
+        if (invoice is null)
+        {
+            throw new NotFoundException("Fatura bulunamadı.");
+        }
+
+        var access = await _access.ResolveAsync();
+        access.EnsureCanRead(invoice.InvoiceTypeId);
+
+        if (invoice.CurrentStatus is not (InvoiceStatus.Completed or InvoiceStatus.Rejected ))
+        {
+            throw new BadRequestException(
+                "Yalnızca tamamlanmış (Completed) veya reddedilmiş (Rejected) faturalar arşivlenebilir.");
+        }
+
+        var fromStatus = invoice.CurrentStatus;
+        var now = DateTime.UtcNow;
+        var year = invoice.InvoiceDate.Year;
+        var month = invoice.InvoiceDate.Month;
+
+        foreach (var attachment in invoice.Attachments)
+        {
+            var fileName = Path.GetFileName(attachment.NasRelativePath);
+            var destPath = $"invoices/{year}_archived/{month:D2}/{invoice.Id}/{fileName}";
+            if (string.Equals(attachment.NasRelativePath, destPath, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            await _storage.MoveAsync(attachment.NasRelativePath, destPath);
+            attachment.NasRelativePath = destPath;
+        }
+
+        invoice.CurrentStatus = InvoiceStatus.Archived;
+        invoice.ArchivedAt = now;
+        invoice.ArchivedByUserId = actorUserId;
+        invoice.UpdatedAt = now;
+
+        await _invoiceDb.SaveChangesAsync();
+
+        await _workflowHistory.LogAsync(
+            invoice.Id,
+            WorkflowActionType.Archived,
+            InvoiceStatus.Archived,
+            fromStatus,
+            actorUserId,
+            $"Fatura arşivlendi ({year}_archived/{month:D2}).");
+
+        return await MapDetailAsync(await LoadDetailAsync(id));
     }
 
     public async Task<IReadOnlyList<InvoiceRelationResponseDto>> GetRelationsAsync(int invoiceId)
@@ -571,6 +759,7 @@ public class InvoiceService : IInvoiceService
         AddIfHasValue(userIds, invoice.AssignedUserId);
         AddIfHasValue(userIds, invoice.Auditor1UserId);
         AddIfHasValue(userIds, invoice.Auditor2UserId);
+        AddIfHasValue(userIds, invoice.ArchivedByUserId);
         userIds.AddRange(invoice.WorkflowSteps.Where(s => s.AssignedUserId.HasValue).Select(s => s.AssignedUserId!.Value));
         userIds.AddRange(invoice.Attachments.Where(a => a.UploadedByUserId.HasValue).Select(a => a.UploadedByUserId!.Value));
 
@@ -619,6 +808,9 @@ public class InvoiceService : IInvoiceService
             CurrentStatus = invoice.CurrentStatus,
             CreatedAt = invoice.CreatedAt,
             UpdatedAt = invoice.UpdatedAt,
+            ArchivedAt = invoice.ArchivedAt,
+            ArchivedByUserId = invoice.ArchivedByUserId,
+            ArchivedByUserFullName = NameOf(userNames, invoice.ArchivedByUserId),
             LineItems = invoice.LineItems.OrderBy(l => l.Id).Select(MapLineItem).ToList(),
             WorkflowSteps = MapWorkflowSteps(invoice.WorkflowSteps, userNames, departmentNames),
             Attachments = MapAttachments(invoice.Attachments, userNames),

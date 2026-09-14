@@ -50,7 +50,7 @@ public class TblCariService : ITblCariService
         }
     }
 
-    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync(bool? isActive = null)
+    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync(bool? isActive = null, string? name = null)
     {
         try
         {
@@ -60,6 +60,15 @@ public class TblCariService : ITblCariService
                 query = isActive.Value
                     ? query.Where(e => e.Deleted != true)
                     : query.Where(e => e.Deleted == true);
+            }
+
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                var term = name.Trim();
+                query = query.Where(e =>
+                    (e.FirmaAdi != null && e.FirmaAdi.Contains(term)) ||
+                    (e.Unvan != null && e.Unvan.Contains(term)) ||
+                    (e.FirmaKodu != null && e.FirmaKodu.Contains(term)));
             }
 
             return await query

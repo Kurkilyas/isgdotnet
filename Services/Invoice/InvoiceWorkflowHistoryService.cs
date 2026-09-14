@@ -118,7 +118,7 @@ public class InvoiceWorkflowHistoryService : IInvoiceWorkflowHistoryService
         return PagedResult<InvoiceWorkflowHistoryResponseDto>.Create(items, totalCount, page, pageSize);
     }
 
-    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync()
+    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync(string? name = null)
     {
         var access = await _access.ResolveAsync();
         if (!access.CanAccessAll && access.InvoiceTypeIds.Count == 0)
@@ -140,13 +140,15 @@ public class InvoiceWorkflowHistoryService : IInvoiceWorkflowHistoryService
             .Select(e => new { e.Id, e.Reason, e.ActionType, e.InvoiceId })
             .ToListAsync();
 
-        return rows.Select(e => new IdNameDto
+        var items = rows.Select(e => new IdNameDto
         {
             Id = e.Id,
             Name = string.IsNullOrWhiteSpace(e.Reason)
                 ? $"{e.ActionType} #{e.InvoiceId}"
                 : e.Reason
-        }).ToList();
+        });
+
+        return IdNameDto.FilterByName(items, name);
     }
 
     public async Task<InvoiceWorkflowHistoryResponseDto?> GetByIdAsync(int id)

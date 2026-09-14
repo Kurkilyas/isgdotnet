@@ -54,10 +54,16 @@ public class InvoiceLineItemService : IInvoiceLineItemService
             pageSize);
     }
 
-    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync(int? invoiceId = null)
+    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync(int? invoiceId = null, string? name = null)
     {
         var access = await _access.ResolveAsync();
         var query = await BuildVisibleQueryAsync(access, invoiceId);
+
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            var term = name.Trim();
+            query = query.Where(l => l.Description.Contains(term));
+        }
 
         var rows = await query
             .OrderBy(l => l.InvoiceId)

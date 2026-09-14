@@ -59,12 +59,18 @@ public class RoleService : IRoleService
         return PagedResult<RoleListDto>.Create(items, totalCount, page, pageSize);
     }
 
-    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync(bool? isActive = null)
+    public async Task<IReadOnlyList<IdNameDto>> GetAllAsync(bool? isActive = null, string? name = null)
     {
         var query = _context.Roles.AsNoTracking();
         if (isActive.HasValue)
         {
             query = query.Where(r => r.IsActive == isActive.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            var term = name.Trim();
+            query = query.Where(r => r.DisplayName.Contains(term));
         }
 
         return await query

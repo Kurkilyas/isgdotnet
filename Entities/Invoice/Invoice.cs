@@ -102,6 +102,12 @@ public class Invoice : IAuditableEntity, ISoftDeletable
         InvoiceStatus.ErrorReturned or
         InvoiceStatus.PendingAssignment);
 
+    /// <summary>Fatura Completed veya Rejected iken InvoiceArchive iznine sahip biri tarafından manuel arşivlenir.</summary>
+    public DateTime? ArchivedAt { get; set; }
+
+    /// <summary>SoftFK -> Auth DB users.Id, cross-database, EF Core navigation yok.</summary>
+    public int? ArchivedByUserId { get; set; }
+
     public DateTime? CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public DateTime? DeletedAt { get; set; }

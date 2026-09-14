@@ -34,9 +34,9 @@ public class UserActivityLogsController : ControllerBase
 
     [HttpGet("all")]
     [Permission("AdminRead")]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] string? name = null)
     {
-        var result = await _service.GetAllAsync();
+        var result = await _service.GetAllAsync(name);
         return Ok(result);
     }
 

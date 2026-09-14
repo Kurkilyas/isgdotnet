@@ -7,6 +7,6 @@ namespace InvoiceTrackingSystemBackend.Interfaces.Vega;
 public interface ITblMuhCariHesapKodlariService
 {
     Task<PagedResult<TblMuhCariHesapKodlariDto>> GetListAsync(int page = 1, int pageSize = 20);
-    Task<IReadOnlyList<IdNameDto>> GetAllAsync();
+    Task<IReadOnlyList<IdNameDto>> GetAllAsync(string? name = null);
     Task<TblMuhCariHesapKodlariDto?> GetByIdAsync(int id);
 }

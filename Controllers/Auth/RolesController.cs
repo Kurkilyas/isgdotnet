@@ -35,9 +35,9 @@ public class RolesController : ControllerBase
     }
 
     [HttpGet("all")]
-    public async Task<IActionResult> GetAll([FromQuery] bool? isActive = null)
+    public async Task<IActionResult> GetAll([FromQuery] bool? isActive = null, [FromQuery] string? name = null)
     {
-        var result = await _roleService.GetAllAsync(isActive);
+        var result = await _roleService.GetAllAsync(isActive, name);
         return Ok(result);
     }
 

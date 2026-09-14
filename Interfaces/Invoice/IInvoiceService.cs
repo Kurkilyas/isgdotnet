@@ -17,11 +17,14 @@ public interface IInvoiceService
         bool? isDuplicate = null,
         DateOnly? fromDate = null,
         DateOnly? toDate = null);
-    Task<IReadOnlyList<IdNameDto>> GetAllAsync();
+    Task<IReadOnlyList<IdNameDto>> GetAllAsync(string? name = null);
+    Task<InvoiceDashboardSummaryDto> GetMySummaryAsync(int userId);
+    Task<PagedResult<InvoiceListItemDto>> GetInboxAsync(int userId, int page = 1, int pageSize = 5);
     Task<InvoiceDetailDto> GetByIdAsync(int id, int? viewerUserId = null);
     Task<InvoiceDetailDto> CreateAsync(CreateInvoiceRequestDto request, int? actorUserId = null);
     Task<InvoiceDetailDto> UpdateAsync(int id, UpdateInvoiceRequestDto request, int? actorUserId = null);
     Task DeleteAsync(int id);
+    Task<InvoiceDetailDto> ArchiveAsync(int id, int actorUserId);
 
     Task<IReadOnlyList<InvoiceRelationResponseDto>> GetRelationsAsync(int invoiceId);
     Task<InvoiceRelationResponseDto> CreateRelationAsync(int invoiceId, CreateInvoiceRelationRequestDto request, int? createdByUserId);
