@@ -1,6 +1,6 @@
-using InvoiceTrackingSystemBackend.Entities.Auth;
+using isgDotnet.Entities.Auth;
 
-namespace InvoiceTrackingSystemBackend.Interfaces.Auth;
+namespace isgDotnet.Interfaces.Auth;
 
 public interface IJwtHelper
 {

@@ -1,10 +1,10 @@
-using InvoiceTrackingSystemBackend.DTOs.Auth;
-using InvoiceTrackingSystemBackend.Interfaces.Auth;
+using isgDotnet.DTOs.Auth;
+using isgDotnet.Interfaces.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
-namespace InvoiceTrackingSystemBackend.Controllers.Auth;
+namespace isgDotnet.Controllers.Auth;
 
 [ApiController]
 [Route("api/[controller]")]

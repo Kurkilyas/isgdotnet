@@ -1,4 +1,4 @@
-namespace InvoiceTrackingSystemBackend.Settings;
+namespace isgDotnet.Settings;
 
 public class SmtpOptions
 {

@@ -1,4 +1,4 @@
-namespace InvoiceTrackingSystemBackend.Interfaces;
+namespace isgDotnet.Interfaces;
 
 public interface IStorageService
 {

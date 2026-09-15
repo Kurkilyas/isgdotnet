@@ -1,7 +1,7 @@
-using InvoiceTrackingSystemBackend.Entities.Auth;
+using isgDotnet.Entities.Auth;
 using Microsoft.EntityFrameworkCore;
 
-namespace InvoiceTrackingSystemBackend.Data;
+namespace isgDotnet.Data;
 
 public class UserDbContext : DbContext
 {

@@ -2,15 +2,15 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using InvoiceTrackingSystemBackend.Data;
-using InvoiceTrackingSystemBackend.Entities.Auth;
-using InvoiceTrackingSystemBackend.Interfaces.Auth;
-using InvoiceTrackingSystemBackend.Settings;
+using isgDotnet.Data;
+using isgDotnet.Entities.Auth;
+using isgDotnet.Interfaces.Auth;
+using isgDotnet.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
-namespace InvoiceTrackingSystemBackend.Helpers;
+namespace isgDotnet.Helpers;
 
 public class JwtHelper : IJwtHelper
 {

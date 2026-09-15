@@ -1,10 +1,10 @@
 using System.Net;
 using System.Text.Json;
-using InvoiceTrackingSystemBackend.Exceptions;
+using isgDotnet.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using MySqlConnector;
 
-namespace InvoiceTrackingSystemBackend.Middleware;
+namespace isgDotnet.Middleware;
 
 public class ExceptionMiddleware
 {

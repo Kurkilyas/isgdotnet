@@ -1,13 +1,13 @@
 using System.Security.Claims;
-using InvoiceTrackingSystemBackend.Attributes;
-using InvoiceTrackingSystemBackend.DTOs.Auth;
-using InvoiceTrackingSystemBackend.Exceptions;
-using InvoiceTrackingSystemBackend.Interfaces.Auth;
+using isgDotnet.Attributes;
+using isgDotnet.DTOs.Auth;
+using isgDotnet.Exceptions;
+using isgDotnet.Interfaces.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
-namespace InvoiceTrackingSystemBackend.Controllers.Auth;
+namespace isgDotnet.Controllers.Auth;
 
 [ApiController]
 [Route("api/departments")]

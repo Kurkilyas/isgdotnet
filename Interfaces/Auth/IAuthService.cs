@@ -1,6 +1,6 @@
-using InvoiceTrackingSystemBackend.DTOs.Auth;
+using isgDotnet.DTOs.Auth;
 
-namespace InvoiceTrackingSystemBackend.Interfaces.Auth;
+namespace isgDotnet.Interfaces.Auth;
 
 public interface IAuthService
 {

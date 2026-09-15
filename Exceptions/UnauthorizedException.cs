@@ -1,4 +1,4 @@
-namespace InvoiceTrackingSystemBackend.Exceptions;
+namespace isgDotnet.Exceptions;
 
 public class UnauthorizedException : Exception
 {

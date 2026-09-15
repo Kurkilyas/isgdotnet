@@ -1,12 +1,12 @@
 using System.Net;
 using System.Net.Mail;
-using InvoiceTrackingSystemBackend.Constants;
-using InvoiceTrackingSystemBackend.Exceptions;
-using InvoiceTrackingSystemBackend.Interfaces;
-using InvoiceTrackingSystemBackend.Settings;
+using isgDotnet.Constants;
+using isgDotnet.Exceptions;
+using isgDotnet.Interfaces;
+using isgDotnet.Settings;
 using Microsoft.Extensions.Options;
 
-namespace InvoiceTrackingSystemBackend.Services;
+namespace isgDotnet.Services;
 
 public class EmailService : IEmailService
 {

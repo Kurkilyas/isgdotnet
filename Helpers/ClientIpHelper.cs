@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 
-namespace InvoiceTrackingSystemBackend.Helpers;
+namespace isgDotnet.Helpers;
 
 public static class ClientIpHelper
 {

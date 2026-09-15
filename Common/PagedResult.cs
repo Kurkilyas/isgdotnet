@@ -1,4 +1,4 @@
-namespace InvoiceTrackingSystemBackend.Common;
+namespace isgDotnet.Common;
 
 public class PagedResult<T>
 {

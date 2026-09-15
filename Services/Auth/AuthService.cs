@@ -1,18 +1,18 @@
 using System.Security.Cryptography;
 using System.Text;
-using InvoiceTrackingSystemBackend.Constants;
-using InvoiceTrackingSystemBackend.Data;
-using InvoiceTrackingSystemBackend.DTOs.Auth;
-using InvoiceTrackingSystemBackend.Entities.Auth;
-using InvoiceTrackingSystemBackend.Exceptions;
-using InvoiceTrackingSystemBackend.Helpers;
-using InvoiceTrackingSystemBackend.Interfaces;
-using InvoiceTrackingSystemBackend.Interfaces.Auth;
-using InvoiceTrackingSystemBackend.Settings;
+using isgDotnet.Constants;
+using isgDotnet.Data;
+using isgDotnet.DTOs.Auth;
+using isgDotnet.Entities.Auth;
+using isgDotnet.Exceptions;
+using isgDotnet.Helpers;
+using isgDotnet.Interfaces;
+using isgDotnet.Interfaces.Auth;
+using isgDotnet.Settings;
 using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
 
-namespace InvoiceTrackingSystemBackend.Services.Auth;
+namespace isgDotnet.Services.Auth;
 
 public class AuthService : IAuthService
 {

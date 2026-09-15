@@ -1,13 +1,13 @@
-using InvoiceTrackingSystemBackend.Common;
-using InvoiceTrackingSystemBackend.Constants;
-using InvoiceTrackingSystemBackend.Data;
-using InvoiceTrackingSystemBackend.DTOs.Auth;
-using InvoiceTrackingSystemBackend.Entities.Auth;
-using InvoiceTrackingSystemBackend.Exceptions;
-using InvoiceTrackingSystemBackend.Interfaces.Auth;
+using isgDotnet.Common;
+using isgDotnet.Constants;
+using isgDotnet.Data;
+using isgDotnet.DTOs.Auth;
+using isgDotnet.Entities.Auth;
+using isgDotnet.Exceptions;
+using isgDotnet.Interfaces.Auth;
 using Microsoft.EntityFrameworkCore;
 
-namespace InvoiceTrackingSystemBackend.Services.Auth;
+namespace isgDotnet.Services.Auth;
 
 public class PermissionService : IPermissionService
 {

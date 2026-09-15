@@ -1,6 +1,6 @@
-using InvoiceTrackingSystemBackend.Entities.Common;
+using isgDotnet.Entities.Common;
 
-namespace InvoiceTrackingSystemBackend.Entities.Auth;
+namespace isgDotnet.Entities.Auth;
 
 public class RolePermission : ISoftDeletable
 {

@@ -1,7 +1,7 @@
-using InvoiceTrackingSystemBackend.Common;
-using InvoiceTrackingSystemBackend.DTOs.Auth;
+using isgDotnet.Common;
+using isgDotnet.DTOs.Auth;
 
-namespace InvoiceTrackingSystemBackend.Interfaces.Auth;
+namespace isgDotnet.Interfaces.Auth;
 
 public interface IPermissionService
 {

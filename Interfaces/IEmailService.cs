@@ -1,6 +1,6 @@
-using InvoiceTrackingSystemBackend.Constants;
+using isgDotnet.Constants;
 
-namespace InvoiceTrackingSystemBackend.Interfaces;
+namespace isgDotnet.Interfaces;
 
 public interface IEmailService
 {

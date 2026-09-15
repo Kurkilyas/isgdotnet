@@ -1,4 +1,4 @@
-namespace InvoiceTrackingSystemBackend.Exceptions;
+namespace isgDotnet.Exceptions;
 
 /// <summary>SMTP gibi harici bir sisteme erişilemediğinde fırlatılır. Middleware bunu 503 olarak döner.</summary>
 public class ExternalServiceException : Exception

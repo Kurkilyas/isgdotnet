@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace InvoiceTrackingSystemBackend.DTOs.Auth;
+namespace isgDotnet.DTOs.Auth;
 
 public class DepartmentListDto
 {

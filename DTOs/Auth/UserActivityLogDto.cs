@@ -1,6 +1,6 @@
-using InvoiceTrackingSystemBackend.Constants;
+using isgDotnet.Constants;
 
-namespace InvoiceTrackingSystemBackend.DTOs.Auth;
+namespace isgDotnet.DTOs.Auth;
 
 public class UserActivityLogDto
 {

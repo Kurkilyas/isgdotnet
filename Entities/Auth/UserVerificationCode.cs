@@ -1,8 +1,8 @@
-using InvoiceTrackingSystemBackend.Constants;
+using isgDotnet.Constants;
 using System.ComponentModel.DataAnnotations;
-using InvoiceTrackingSystemBackend.Entities.Common;
+using isgDotnet.Entities.Common;
 
-namespace InvoiceTrackingSystemBackend.Entities.Auth;
+namespace isgDotnet.Entities.Auth;
 
 public class UserVerificationCode : ISoftDeletable
 {

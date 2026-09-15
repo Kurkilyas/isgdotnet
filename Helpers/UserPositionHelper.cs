@@ -1,7 +1,7 @@
-using InvoiceTrackingSystemBackend.Data;
+using isgDotnet.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace InvoiceTrackingSystemBackend.Helpers;
+namespace isgDotnet.Helpers;
 
 public static class UserPositionHelper
 {

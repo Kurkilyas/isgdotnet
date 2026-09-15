@@ -1,8 +1,8 @@
-using InvoiceTrackingSystemBackend.Common;
-using InvoiceTrackingSystemBackend.Constants;
-using InvoiceTrackingSystemBackend.DTOs.Auth;
+using isgDotnet.Common;
+using isgDotnet.Constants;
+using isgDotnet.DTOs.Auth;
 
-namespace InvoiceTrackingSystemBackend.Interfaces.Auth;
+namespace isgDotnet.Interfaces.Auth;
 
 public interface IUserActivityLogService
 {

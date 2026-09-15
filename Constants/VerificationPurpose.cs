@@ -1,4 +1,4 @@
-namespace InvoiceTrackingSystemBackend.Constants;
+namespace isgDotnet.Constants;
 
 public enum VerificationPurpose
 {

@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace InvoiceTrackingSystemBackend.Migrations.UserDb
+namespace isgDotnet.Migrations.UserDb
 {
     /// <inheritdoc />
     public partial class InitialUserDb : Migration

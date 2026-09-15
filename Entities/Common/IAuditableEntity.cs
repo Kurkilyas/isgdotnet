@@ -1,4 +1,4 @@
-namespace InvoiceTrackingSystemBackend.Entities.Common;
+namespace isgDotnet.Entities.Common;
 
 /// <summary>Oluşturulma/güncellenme zamanı takip edilen entity'ler.</summary>
 public interface IAuditableEntity

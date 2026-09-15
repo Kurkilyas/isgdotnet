@@ -1,4 +1,4 @@
-namespace InvoiceTrackingSystemBackend.Entities.Common;
+namespace isgDotnet.Entities.Common;
 
 /// <summary>Soft delete uygulanan entity'ler - DeletedAt dolu ise kayıt silinmiş sayılır, fiziksel DELETE yapılmaz.</summary>
 public interface ISoftDeletable

@@ -1,4 +1,4 @@
-namespace InvoiceTrackingSystemBackend.Exceptions;
+namespace isgDotnet.Exceptions;
 
 /// <summary>İstenen kayıt bulunamadığında fırlatılır. Middleware bunu 404 olarak döner.</summary>
 public class NotFoundException : Exception

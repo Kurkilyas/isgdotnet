@@ -1,4 +1,4 @@
-namespace InvoiceTrackingSystemBackend.DTOs.Auth;
+namespace isgDotnet.DTOs.Auth;
 
 public class VerifyEmailResponseDto
 {

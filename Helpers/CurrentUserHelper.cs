@@ -1,7 +1,7 @@
 using System.Security.Claims;
-using InvoiceTrackingSystemBackend.Exceptions;
+using isgDotnet.Exceptions;
 
-namespace InvoiceTrackingSystemBackend.Helpers;
+namespace isgDotnet.Helpers;
 
 public static class CurrentUserHelper
 {

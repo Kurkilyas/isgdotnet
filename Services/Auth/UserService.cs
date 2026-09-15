@@ -1,18 +1,18 @@
 using System.Security.Cryptography;
-using InvoiceTrackingSystemBackend.Common;
-using InvoiceTrackingSystemBackend.Constants;
-using InvoiceTrackingSystemBackend.Data;
-using InvoiceTrackingSystemBackend.DTOs.Auth;
-using InvoiceTrackingSystemBackend.Entities.Auth;
-using InvoiceTrackingSystemBackend.Exceptions;
-using InvoiceTrackingSystemBackend.Helpers;
-using InvoiceTrackingSystemBackend.Interfaces;
-using InvoiceTrackingSystemBackend.Interfaces.Auth;
-using InvoiceTrackingSystemBackend.Settings;
+using isgDotnet.Common;
+using isgDotnet.Constants;
+using isgDotnet.Data;
+using isgDotnet.DTOs.Auth;
+using isgDotnet.Entities.Auth;
+using isgDotnet.Exceptions;
+using isgDotnet.Helpers;
+using isgDotnet.Interfaces;
+using isgDotnet.Interfaces.Auth;
+using isgDotnet.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
-namespace InvoiceTrackingSystemBackend.Services.Auth;
+namespace isgDotnet.Services.Auth;
 
 public class UserService : IUserService
 {
@@ -161,13 +161,7 @@ public class UserService : IUserService
         }
         else
         {
-            var tokens = await _context.RefreshTokens
-                .Where(t => t.UserId == user.Id && t.RevokedAt == null)
-                .ToListAsync();
-            foreach (var token in tokens)
-            {
-                token.RevokedAt = now;
-            }
+            await RevokeUserRefreshTokensAsync(user.Id, now);
         }
 
         await _context.SaveChangesAsync();
@@ -298,9 +292,11 @@ public class UserService : IUserService
             throw new BadRequestException("Yeni şifre mevcut şifre ile aynı olamaz.");
         }
 
+        var now = DateTime.UtcNow;
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
-        user.PasswordChangedAt = DateTime.UtcNow;
-        user.UpdatedAt = DateTime.UtcNow;
+        user.PasswordChangedAt = now;
+        user.UpdatedAt = now;
+        await RevokeUserRefreshTokensAsync(user.Id, now);
         await _context.SaveChangesAsync();
         await _activityLogService.LogAsync(user.Id, AuthActivityType.PASSWORD_CHANGED, "Kullanıcı şifresini değiştirdi.");
     }
@@ -445,6 +441,18 @@ public class UserService : IUserService
         }
 
         return file;
+    }
+
+    private async Task RevokeUserRefreshTokensAsync(int userId, DateTime now)
+    {
+        var tokens = await _context.RefreshTokens
+            .Where(t => t.UserId == userId && t.RevokedAt == null)
+            .ToListAsync();
+
+        foreach (var token in tokens)
+        {
+            token.RevokedAt = now;
+        }
     }
 
     private async Task<User> GetRequiredUserAsync(int userId)
