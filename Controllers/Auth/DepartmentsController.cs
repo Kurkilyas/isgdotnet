@@ -35,7 +35,6 @@ public class DepartmentsController : ControllerBase
     }
 
     [HttpGet("all")]
-    [Permission("InvoiceRead")]
     public async Task<IActionResult> GetAll([FromQuery] bool? isActive = null, [FromQuery] string? name = null)
     {
         var result = await _departmentService.GetAllAsync(isActive, name);

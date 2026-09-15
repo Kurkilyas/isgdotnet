@@ -109,24 +109,6 @@ public class EmailService : IEmailService
             EmailType.AccountLocked => (
                 "Hesabınız kilitlendi",
                 "<p>Merhaba {{FullName}},</p><p>Hesabınız art arda hatalı giriş nedeniyle geçici olarak kilitlendi.</p>"),
-            EmailType.InvoiceAssigned => (
-                "Yeni fatura atandı",
-                "<p>Merhaba {{FullName}},</p><p>{{InvoiceNumber}} numaralı fatura size atandı.</p>"),
-            EmailType.SlaReminder => (
-                "SLA hatırlatması",
-                "<p>Merhaba {{FullName}},</p><p>{{InvoiceNumber}} numaralı faturanın süresi yaklaşıyor.</p>"),
-            EmailType.SlaEscalated => (
-                "SLA süresi aşıldı",
-                "<p>Merhaba {{FullName}},</p><p>{{InvoiceNumber}} numaralı faturanın SLA süresi aşıldı.</p>"),
-            EmailType.InvoiceRejected => (
-                "Fatura reddedildi",
-                "<p>Merhaba {{FullName}},</p><p>{{InvoiceNumber}} numaralı fatura reddedildi. Sebep: {{Reason}}</p>"),
-            EmailType.InvoiceReturned => (
-                "Fatura iade edildi",
-                "<p>Merhaba {{FullName}},</p><p>{{InvoiceNumber}} numaralı fatura iade edildi. Sebep: {{Reason}}</p>"),
-            EmailType.InvoiceMissingDocument => (
-                "Eksik evrak bildirimi",
-                "<p>Merhaba {{FullName}},</p><p>{{InvoiceNumber}} numaralı fatura için eksik evrak bildirildi. Sebep: {{Reason}}</p>"),
             _ => throw new InvalidOperationException($"Tanımsız e-posta türü: {type}")
         };
 

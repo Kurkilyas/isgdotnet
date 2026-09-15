@@ -78,7 +78,6 @@ public class UserDbContext : DbContext
             entity.ToTable("user_roles");
             entity.HasIndex(e => new { e.UserId, e.RoleId })
                   .IsUnique()
-                  .HasFilter("[IsActive] = 1 AND [DeletedAt] IS NULL")
                   .HasDatabaseName("uq_user_role_active");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
 
@@ -105,7 +104,6 @@ public class UserDbContext : DbContext
             entity.ToTable("role_permissions");
             entity.HasIndex(e => new { e.RoleId, e.PermissionId })
                   .IsUnique()
-                  .HasFilter("[DeletedAt] IS NULL")
                   .HasDatabaseName("uq_role_permission_active");
 
             entity.HasOne(e => e.Role)
@@ -131,7 +129,6 @@ public class UserDbContext : DbContext
             entity.ToTable("user_files");
             entity.HasIndex(e => new { e.UserId, e.FileKind })
                   .IsUnique()
-                  .HasFilter("[IsCurrent] = 1 AND [DeletedAt] IS NULL")
                   .HasDatabaseName("uq_user_file_current");
             entity.Property(e => e.FileKind)
                   .HasConversion<string>()

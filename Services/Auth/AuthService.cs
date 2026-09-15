@@ -22,7 +22,6 @@ public class AuthService : IAuthService
 
     private const int MaxFailedLogins = 5;
     private const int LockoutMinutes = 15;
-    private const string AllowedRegistrationEmailDomain = "cazgir.com.tr";
     private const string VerificationLockMessage =
         "Doğrulama deneme hakkı dolduğu için hesabınız kilitlendi. Sistem yöneticinizle iletişime geçin.";
 
@@ -55,12 +54,6 @@ public class AuthService : IAuthService
     public async Task<RegisterResponseDto> RegisterAsync(RegisterRequestDto request)
     {
         var email = request.Email.Trim().ToLowerInvariant();
-
-        if (!IsAllowedRegistrationEmail(email))
-        {
-            throw new BadRequestException(
-                $"Kayıt yalnızca @{AllowedRegistrationEmailDomain} e-posta adresleriyle yapılabilir.");
-        }
 
         var existing = await _context.Users
             .FirstOrDefaultAsync(u => u.Email == email);
@@ -489,18 +482,6 @@ public class AuthService : IAuthService
             user.Id,
             AuthActivityType.ACCOUNT_LOCKED,
             "E-posta doğrulama deneme hakkı doldu (5 hatalı deneme).");
-    }
-
-    private static bool IsAllowedRegistrationEmail(string email)
-    {
-        var atIndex = email.LastIndexOf('@');
-        if (atIndex <= 0 || atIndex == email.Length - 1)
-        {
-            return false;
-        }
-
-        var domain = email[(atIndex + 1)..];
-        return domain.Equals(AllowedRegistrationEmailDomain, StringComparison.OrdinalIgnoreCase);
     }
 
     private static string HashCode(string code)

@@ -6,17 +6,12 @@ using InvoiceTrackingSystemBackend.Data;
 using InvoiceTrackingSystemBackend.Helpers;
 using InvoiceTrackingSystemBackend.Interfaces;
 using InvoiceTrackingSystemBackend.Interfaces.Auth;
-using InvoiceTrackingSystemBackend.Interfaces.Invoice;
-using InvoiceTrackingSystemBackend.Interfaces.Vega;
 using InvoiceTrackingSystemBackend.Middleware;
 using InvoiceTrackingSystemBackend.Services;
 using InvoiceTrackingSystemBackend.Services.Auth;
-using InvoiceTrackingSystemBackend.Services.Invoice;
-using InvoiceTrackingSystemBackend.Services.Vega;
 using InvoiceTrackingSystemBackend.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
@@ -138,14 +133,11 @@ builder.Services.AddRateLimiter(options =>
     };
 });
 
-builder.Services.AddDbContext<InvoiceDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("InvoiceDb")));
+var userDb = builder.Configuration.GetConnectionString("UserDb")
+             ?? throw new InvalidOperationException("UserDb connection string eksik.");
 
 builder.Services.AddDbContext<UserDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("UserDb")));
-
-builder.Services.AddDbContext<VegaDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("VegaConnection")));
+    options.UseMySql(userDb, new MySqlServerVersion(new Version(8, 0, 36))));
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IJwtHelper, JwtHelper>();
@@ -157,25 +149,6 @@ builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<IStorageService, StorageService>();
-builder.Services.AddScoped<ITblCariService, TblCariService>();
-builder.Services.AddScoped<ITblMuhCariHesapKodlariService, TblMuhCariHesapKodlariService>();
-builder.Services.AddScoped<AuthReferenceLookup>();
-builder.Services.AddScoped<IInvoiceAccessService, InvoiceAccessService>();
-builder.Services.AddScoped<IInvoiceTypeService, InvoiceTypeService>();
-builder.Services.AddScoped<IInvoiceTypeStepService, InvoiceTypeStepService>();
-builder.Services.AddScoped<IInvoiceTypeStepApproverService, InvoiceTypeStepApproverService>();
-builder.Services.AddScoped<IWorkflowTransitionRuleService, WorkflowTransitionRuleService>();
-builder.Services.AddScoped<ISupplierCategoryService, SupplierCategoryService>();
-builder.Services.AddScoped<ISupplierService, SupplierService>();
-builder.Services.AddScoped<IInvoiceActivityLogService, InvoiceActivityLogService>();
-builder.Services.AddScoped<IInvoiceWorkflowHistoryService, InvoiceWorkflowHistoryService>();
-builder.Services.AddScoped<IInvoiceNotificationLogService, InvoiceNotificationLogService>();
-builder.Services.AddScoped<IInvoiceWorkflowService, InvoiceWorkflowService>();
-builder.Services.AddScoped<IInvoiceAttachmentService, InvoiceAttachmentService>();
-builder.Services.AddScoped<IInvoiceLineItemService, InvoiceLineItemService>();
-builder.Services.AddScoped<IInvoiceService, InvoiceService>();
-
-
 
 var app = builder.Build();
 

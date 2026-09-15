@@ -1,8 +1,8 @@
 using System.Net;
 using System.Text.Json;
 using InvoiceTrackingSystemBackend.Exceptions;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using MySqlConnector;
 
 namespace InvoiceTrackingSystemBackend.Middleware;
 
@@ -65,13 +65,13 @@ public class ExceptionMiddleware
                 message = exception.Message;
                 break;
 
-            // 3. ÇAKIŞMA (409) - örn. ileride "bu fatura zaten onaylanmış"
+            // 3. ÇAKIŞMA (409)
             case ConflictException:
                 statusCode = (int)HttpStatusCode.Conflict;
                 message = exception.Message;
                 break;
 
-            // 4. HARİCİ SİSTEM ERİŞİLEMİYOR (503) - Vega/ERP gibi
+            // 4. HARİCİ SİSTEM ERİŞİLEMİYOR (503) - SMTP vb.
             case ExternalServiceException:
                 statusCode = (int)HttpStatusCode.ServiceUnavailable;
                 message = exception.Message;
@@ -82,10 +82,8 @@ public class ExceptionMiddleware
                 }
                 break;
 
-            // 5. DOĞRUDAN SQL BAĞLANTI/SORGU HATASI (503) - Vega gibi salt-okunur
-            //    dış veritabanlarına erişilemediğinde servis katmanı özel bir tür
-            //    fırlatmamış olsa bile burada yakalanır.
-            case SqlException:
+            // 5. DOĞRUDAN SQL BAĞLANTI/SORGU HATASI (503)
+            case MySqlException:
             case TimeoutException:
                 statusCode = (int)HttpStatusCode.ServiceUnavailable;
                 message = "Veritabanına/harici sisteme şu anda ulaşılamıyor. Lütfen daha sonra tekrar deneyiniz.";
